@@ -1,0 +1,283 @@
+{
+  "project_name": "Marketing Mix Model (MMM) Development",
+  "timeline": "8–10 weeks",
+  "current_status": {
+    "overall_completion": "80-85%",
+    "phase_focus": "Phase 2 (MMM Development)",
+    "last_updated": "February 27, 2025"
+  },
+  "tech_stack": {
+    "backend": ["Python", "FastAPI", "Statsmodels", "Scikit-learn", "Pandas", "NumPy", "SciPy"],
+    "data_ingestion": "Funnel.io (integrated with PostgreSQL)",
+    "frontend": "Bubble.io (using API Connector)",
+    "deployment": ["Docker", "Render.com"],
+    "interactive_experimentation": ["Google AI Studio", "Colab"],
+    "database": "PostgreSQL",
+    "development_environment": "PyCharm"
+  },
+  "project_structure": {
+    "core_modules": {
+      "preprocessing.py": "Data transformation, stationarity checks, and feature engineering",
+      "adstock.py": "Media carryover effect transformations with various decay functions",
+      "modeling.py": "Constrained regression, PCA, and elasticity calculation",
+      "optimization.py": "Budget allocation optimization (completed)",
+      "utils.py": "Helper functions and diagnostic tools"
+    },
+    "example_scripts": {
+      "basic_mmm.py": "Simple implementation of MMM",
+      "improved_mmm.py": "Enhanced implementation with PCA and constraints",
+      "optimized_mmm.py": "Original optimization script (superseded by improved_mmm.py)",
+      "budget_optimization.py": "Budget allocation tool (completed)"
+    }
+  },
+  "phases": [
+    {
+      "phase": "Phase 1",
+      "title": "Data Ingestion & Pre-Processing via Funnel.io",
+      "duration": "1–2 Weeks",
+      "status": "Pending",
+      "notes": "Currently using synthetic data for model development. Funnel.io setup will begin after core model development is complete.",
+      "objective": "Leverage Funnel.io to handle all data ingestion, cleansing, normalization, and structuring, pushing processed data into PostgreSQL.",
+      "tasks": [
+        {"task": "Account Setup & Onboarding", "duration": "2–3 Days", "description": "Sign up for Funnel.io, complete onboarding, and understand available connectors."},
+        {"task": "Connector Configuration", "duration": "3–5 Days", "description": "Integrate with key ad platforms (Google Ads, Meta, TV GRPs, etc.)."},
+        {"task": "Data Transformation Rules", "duration": "1–2 Days", "description": "Set up rules for date formatting, currency conversion, etc."},
+        {"task": "Destination Setup", "description": "Use Funnel.io's built-in PostgreSQL destination to store pre-processed data."},
+        {"task": "Validation", "description": "Ensure data in PostgreSQL reflects expected quality and structure."}
+      ]
+    },
+    {
+      "phase": "Phase 2",
+      "title": "Media Mix Modeling (MMM) Development",
+      "duration": "3–4 Weeks",
+      "status": "In Progress (80-85% Complete)",
+      "objective": "Develop, test, and refine the core MMM solution using dummy data before full integration.",
+      "completed_tasks": [
+        {"task": "Model Specification & Planning", "description": "Defined KPIs, outlined assumptions, and documented the rationale for MMM."},
+        {"task": "Core Model Development", "description": "Implemented adstock transformations, PCA for multicollinearity, and constrained regression."},
+        {"task": "Validation & Performance Testing", "description": "Achieved R² of 0.48 on test data with MAPE of 0.40%."},
+        {"task": "Budget Optimization Module", "description": "Implemented multiple optimization approaches including simple allocation, constrained, and advanced response curves."}
+      ],
+      "remaining_tasks": [
+        {"task": "Model Diagnostics Enhancement", "priority": "High", "description": "Implement residual analysis, sensitivity testing, and stability validation."},
+        {"task": "PCA Refinement", "priority": "High", "description": "Improve PCA approach to enhance model fit and elasticity accuracy."},
+        {"task": "Serialization & Production Readiness", "priority": "Medium", "description": "Implement save/load functionality and prepare for database integration."},
+        {"task": "Documentation", "priority": "Medium", "description": "Create comprehensive documentation of methodology and interpretation guidelines."},
+        {"task": "Code Refactoring", "priority": "Low", "description": "Clean up code structure for maintainability and API readiness."}
+      ],
+      "technical_learnings": [
+        "Extreme multicollinearity in media variables requires dimensionality reduction (PCA) rather than simple regularization",
+        "Constrained optimization is necessary to ensure theoretically valid elasticities (non-negative marketing effects)",
+        "Channel grouping improves model stability while maintaining interpretability",
+        "Component-based adstock transformations perform better than direct media transformations",
+        "Standard OLS models produce unstable and counterintuitive elasticities due to correlation structure",
+        "Log transformation of target variable addresses non-stationarity issues",
+        "PCA reduces multicollinearity but may result in models with lower predictive power than expected",
+        "Proper elasticity scaling is critical for budget optimization to avoid numerical instability",
+        "Different optimization approaches produce dramatically different allocation strategies",
+        "Adstock transformations need to be applied carefully to both raw media variables and PCA components"
+      ]
+    },
+    {
+      "phase": "Phase 3",
+      "title": "API Integration & Data Access",
+      "duration": "1–2 Weeks",
+      "status": "Pending",
+      "objective": "Integrate FastAPI backend with PostgreSQL (processed data from Funnel.io).",
+      "tasks": [
+        {"task": "Database Connection Setup", "duration": "2–3 Days", "description": "Configure FastAPI to connect to PostgreSQL securely."},
+        {"task": "API Endpoint Development", "duration": "3–5 Days", "description": "Create endpoints to query the database and run the MMM."},
+        {"task": "Testing & Debugging", "duration": "2–4 Days", "description": "Use Postman/cURL to validate responses and write unit tests."}
+      ]
+    },
+    {
+      "phase": "Phase 4",
+      "title": "Frontend Integration via Bubble.io",
+      "duration": "1–2 Weeks",
+      "status": "Pending",
+      "objective": "Develop a user-friendly interface using Bubble.io to interact with MMM results.",
+      "tasks": [
+        {"task": "UI/UX Design", "duration": "3–4 Days", "description": "Design and build the dashboard in Bubble.io."},
+        {"task": "API Connector Setup", "duration": "3–4 Days", "description": "Configure Bubble's API Connector for FastAPI integration."},
+        {"task": "User Flow Testing", "duration": "2–3 Days", "description": "Validate end-to-end data retrieval and model result display."}
+      ]
+    },
+    {
+      "phase": "Phase 5",
+      "title": "Deployment & Hosting",
+      "duration": "1 Week",
+      "status": "Pending",
+      "objective": "Package and deploy the FastAPI backend using Docker and Render.",
+      "tasks": [
+        {"task": "Dockerization", "duration": "2–3 Days", "description": "Create a Dockerfile and test the image locally."},
+        {"task": "Deploy to Render", "duration": "2–3 Days", "description": "Connect Git to Render, configure builds, and set environment variables."},
+        {"task": "Integration Verification", "duration": "1 Day", "description": "Ensure Bubble.io connects correctly to the deployed API."}
+      ]
+    },
+    {
+      "phase": "Phase 6",
+      "title": "QA, Refinement & MVP Launch Prep",
+      "duration": "1 Week",
+      "status": "Pending",
+      "objective": "Perform testing, refine all components, and prepare for launch.",
+      "tasks": [
+        {"task": "End-to-End Testing", "duration": "3–4 Days", "description": "Simulate real-world usage and conduct load testing."},
+        {"task": "Bug Fixing & Refinement", "duration": "2 Days", "description": "Resolve issues and finalize documentation."},
+        {"task": "Final Documentation & Launch Prep", "duration": "1 Day", "description": "Prepare user guides and launch materials."}
+      ]
+    }
+  ],
+  "data_requirements": {
+    "inputs": {
+      "media_data": {
+        "required_columns": ["date", "channel", "spend"],
+        "recommended_columns": ["impressions", "clicks", "conversions"],
+        "minimum_timespan": "18 months",
+        "frequency": "Weekly or daily preferred"
+      },
+      "business_data": {
+        "required_columns": ["date", "revenue", "units_sold"],
+        "recommended_columns": ["new_customers", "website_visits", "conversion_rate"]
+      },
+      "control_variables": {
+        "required": ["price_index", "competitor_price_index"],
+        "recommended": ["gdp_index", "consumer_confidence", "seasonality_indicators"]
+      }
+    },
+    "preprocessing": {
+      "stationarity_check": "ADF test for stationarity with log transformation if needed",
+      "adstock_parameters": {
+        "tv_spend": {"decay_rate": 0.85, "max_lag": 8},
+        "digital_display_spend": {"decay_rate": 0.7, "max_lag": 4},
+        "search_spend": {"decay_rate": 0.3, "max_lag": 2},
+        "social_media_spend": {"decay_rate": 0.6, "max_lag": 5},
+        "video_spend": {"decay_rate": 0.75, "max_lag": 6},
+        "email_spend": {"decay_rate": 0.4, "max_lag": 3}
+      },
+      "channel_grouping": {
+        "traditional_spend": ["tv_spend"],
+        "paid_digital_spend": ["digital_display_spend", "search_spend", "video_spend"],
+        "social_spend": ["social_media_spend"],
+        "owned_media_spend": ["email_spend"]
+      }
+    }
+  },
+  "implementation_guidelines": {
+    "modeling_approach": {
+      "summary": "Component-based constrained regression with PCA",
+      "steps": [
+        "Apply log transformation to both target and media variables",
+        "Group correlated media channels into logical clusters",
+        "Apply PCA to create orthogonal components",
+        "Apply adstock transformations to components",
+        "Use constrained optimization to ensure non-negative elasticities",
+        "Map component coefficients back to original channels",
+        "Scale coefficients to calculate proper elasticities",
+        "Validate on holdout data"
+      ]
+    },
+    "common_issues": {
+      "multicollinearity": {
+        "symptoms": "VIF values >10, unstable coefficients, counterintuitive signs",
+        "solution": "Use PCA instead of traditional regularization methods"
+      },
+      "negative_elasticities": {
+        "symptoms": "Negative coefficients for media variables",
+        "solution": "Apply constrained optimization with non-negativity constraints"
+      },
+      "overfitting": {
+        "symptoms": "Large gap between training and test performance",
+        "solution": "Use cross-validation and regularization"
+      },
+      "improper_elasticity_scaling": {
+        "symptoms": "Extreme elasticity values, infinite optimization results",
+        "solution": "Properly scale coefficients using standard elasticity formula (coef * X/Y)"
+      },
+      "poor_model_fit_with_pca": {
+        "symptoms": "Negative R² values, high MAPE",
+        "solution": "Adjust number of components, try different adstock parameters, refine channel groupings"
+      }
+    },
+    "budget_optimization": {
+      "approaches": [
+        "Simple allocation based on elasticity proportions",
+        "Constrained optimization with minimum/maximum spend limits",
+        "Advanced optimization with diminishing returns modeling"
+      ],
+      "key_parameters": {
+        "elasticities": "Critical for accurate optimization; ensure proper scaling",
+        "constraints": "Set realistic minimum (20-30% of current) and maximum (200-300% of current) bounds",
+        "scenarios": "Test multiple budget levels (e.g., 80%, 100%, 120% of current)"
+      },
+      "interpretation": {
+        "revenue_lift": "Percentage increase in expected revenue",
+        "roi_improvement": "Increase in return on investment compared to current allocation",
+        "channel_shifts": "Percentage change in channel allocation from current to optimized"
+      }
+    },
+    "database_integration": {
+      "future_plans": "Move data preprocessing and transformation logic to PostgreSQL for better scalability",
+      "key_functions": [
+        "Log transformation",
+        "Adstock application",
+        "PCA preparation",
+        "Seasonality extraction"
+      ]
+    }
+  },
+  "next_steps": {
+    "immediate_focus": "Improve model fit and predictive power of the PCA-based approach",
+    "secondary_priorities": [
+      "Fine-tune adstock parameters for each channel",
+      "Explore alternative channel groupings",
+      "Develop scenario analysis capabilities",
+      "Implement sensitivity testing for elasticities"
+    ],
+    "technical_debt": [
+      "Create comprehensive unit tests",
+      "Refactor code for maintainability",
+      "Design database schema for model storage",
+      "Improve error handling and validation"
+    ]
+  },
+  "key_model_insights": {
+    "standard_model": {
+      "r_squared": 0.1044,
+      "adjusted_r_squared": 0.0290,
+      "multicollinearity": "High (VIF values ranging from 12.8 to 98.8)",
+      "elasticities": {
+        "tv": 0.1734,
+        "digital": -0.0699,
+        "search": -0.2585,
+        "social": 0.0915,
+        "programmatic": 0.1257
+      }
+    },
+    "pca_model": {
+      "components": 3,
+      "variance_explained": "89.4%",
+      "r_squared": -0.9388,
+      "mape": "31.60%",
+      "elasticities": {
+        "tv": 0.0016,
+        "digital": 0.0000,
+        "search": 0.0000,
+        "social": 0.0000,
+        "programmatic": 0.0000
+      },
+      "channel_grouping": {
+        "traditional_spend": "TV spend",
+        "paid_digital_spend": "Digital, Search, and Programmatic",
+        "social_spend": "Social media spend",
+        "owned_media_spend": "Programmatic spend"
+      }
+    },
+    "optimization_results": {
+      "simple_allocation": "100% to TV using PCA elasticities",
+      "constrained_allocation": "81.7% to TV, minimum constraints enforced on other channels",
+      "advanced_optimization": "157.6% increase for TV, reductions for other channels",
+      "revenue_lift": "0.15% with optimized allocation",
+      "roi_improvement": "0.005 (from 3.273 to 3.278)"
+    }
+  }
+}
