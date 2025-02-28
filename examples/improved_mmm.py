@@ -7,8 +7,6 @@ from scipy.optimize import minimize
 import sys
 import os
 
-from mmm.optimization import simple_budget_allocation
-
 # Add parent directory to path to allow imports from mmm directory
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -16,7 +14,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from mmm.preprocessing import preprocess_data, apply_adstock
 from mmm.modeling import build_mmm, validate_model, apply_constraints
 from mmm.optimization import calculate_elasticities, calculate_roi, optimize_budget, extract_current_allocation
-
+from mmm.optimization import simple_budget_allocation
 
 def run_complete_mmm_workflow(data_path):
     """Run complete MMM workflow from data loading to optimization"""
@@ -128,15 +126,18 @@ def run_complete_mmm_workflow(data_path):
         # Use simple_budget_allocation instead of optimize_budget
         optimal_allocation = simple_budget_allocation(elasticities, current_budget)
 
-        # Calculate metrics manually
+        # Get a consistent order of channels to use as index
+        channels = list(current_allocation.keys())
+
+        # Create DataFrame with explicit index
         optimization_results = pd.DataFrame({
-            'Current Allocation': current_allocation,
-            'Current %': [spend / current_budget * 100 for spend in current_allocation.values()],
-            'Optimal Allocation': optimal_allocation,
-            'Optimal %': [spend / current_budget * 100 for spend in optimal_allocation.values()],
+            'Current Allocation': [current_allocation[ch] for ch in channels],
+            'Current %': [current_allocation[ch] / current_budget * 100 for ch in channels],
+            'Optimal Allocation': [optimal_allocation[ch] for ch in channels],
+            'Optimal %': [optimal_allocation[ch] / current_budget * 100 for ch in channels],
             'Change %': [(optimal_allocation[ch] - current_allocation[ch]) / current_allocation[ch] * 100
-                         if current_allocation[ch] > 0 else 0 for ch in current_allocation]
-        })
+                         if current_allocation[ch] > 0 else 0 for ch in channels]
+        }, index=channels)
 
         # Calculate expected lift
         current_effect = sum(elasticities[ch] * current_allocation[ch] for ch in elasticities)
