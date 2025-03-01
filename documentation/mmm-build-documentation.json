@@ -2,6 +2,481 @@
   "project_name": "Marketing Mix Model (MMM) Development",
   "timeline": "8–10 weeks",
   "current_status": {
+    "overall_completion": "95%",
+    "phase_focus": "Phase 2 (MMM Development)",
+    "last_updated": "March 01, 2025"
+  },
+  "tech_stack": {
+    "backend": ["Python", "FastAPI", "Statsmodels", "Scikit-learn", "Pandas", "NumPy", "SciPy"],
+    "data_ingestion": "Funnel.io (integrated with PostgreSQL)",
+    "frontend": "Bubble.io (using API Connector)",
+    "deployment": ["Docker", "Render.com"],
+    "interactive_experimentation": ["Google AI Studio", "Colab"],
+    "database": "PostgreSQL",
+    "development_environment": "PyCharm"
+  },
+  "project_structure": {
+    "core_modules": {
+      "preprocessing.py": "Data transformation, stationarity checks, and feature engineering",
+      "adstock.py": "Media carryover effect transformations with various decay functions",
+      "modeling.py": "Constrained regression, PCA, and elasticity calculation",
+      "optimization.py": "Budget allocation optimization (completed)",
+      "utils.py": "Helper functions and diagnostic tools",
+      "visualization.py": "Response curves, media contributions, and performance metrics visualization",
+      "model_diagnostics.py": "Comprehensive model validation, stability assessment, and sensitivity testing",
+      "diagnostics_integration.py": "Integration of diagnostics with the existing MMM framework"
+    },
+    "example_scripts": {
+      "basic_mmm.py": "Simple implementation of MMM with linear and log-log model comparison",
+      "improved_mmm.py": "Enhanced implementation with PCA and constraints",
+      "optimized_mmm.py": "Original optimization script (superseded by improved_mmm.py)",
+      "budget_optimization.py": "Budget allocation tool (completed)",
+      "run_mmm_diagnostics.py": "Command-line tool for running comprehensive model diagnostics"
+    },
+    "model_transformations": {
+      "adstock_transformations": "Geometric (exponential), Weibull, and delayed adstock patterns",
+      "diminishing_returns": "Log, Hill, and power transformations",
+      "model_types": "Linear-linear, log-log, semi-log, and log-linear specifications",
+      "elasticity_calculations": "Corrected implementation for different model types"
+    }
+  },
+  "phases": [
+    {
+      "phase": "Phase 1",
+      "title": "Data Ingestion & Pre-Processing via Funnel.io",
+      "duration": "1–2 Weeks",
+      "status": "Pending",
+      "notes": "Currently using synthetic data for model development. Funnel.io setup will begin after core model development is complete.",
+      "objective": "Leverage Funnel.io to handle all data ingestion, cleansing, normalization, and structuring, pushing processed data into PostgreSQL.",
+      "tasks": [
+        {"task": "Account Setup & Onboarding", "duration": "2–3 Days", "description": "Sign up for Funnel.io, complete onboarding, and understand available connectors."},
+        {"task": "Connector Configuration", "duration": "3–5 Days", "description": "Integrate with key ad platforms (Google Ads, Meta, TV GRPs, etc.)."},
+        {"task": "Data Transformation Rules", "duration": "1–2 Days", "description": "Set up rules for date formatting, currency conversion, etc."},
+        {"task": "Destination Setup", "description": "Use Funnel.io's built-in PostgreSQL destination to store pre-processed data."},
+        {"task": "Validation", "description": "Ensure data in PostgreSQL reflects expected quality and structure."}
+      ]
+    },
+    {
+      "phase": "Phase 2",
+      "title": "Media Mix Modeling (MMM) Development",
+      "duration": "3–4 Weeks",
+      "status": "Nearly Complete (95%)",
+      "objective": "Develop, test, and refine the core MMM solution using dummy data before full integration.",
+      "completed_tasks": [
+        {"task": "Model Specification & Planning", "description": "Defined KPIs, outlined assumptions, and documented the rationale for MMM."},
+        {"task": "Core Model Development", "description": "Implemented adstock transformations, PCA for multicollinearity, and constrained regression."},
+        {"task": "Validation & Performance Testing", "description": "Achieved R² of 0.82 on test data with MAPE of 6.73% for linear model."},
+        {"task": "Budget Optimization Module", "description": "Implemented multiple optimization approaches including simple allocation, constrained, and advanced response curves."},
+        {"task": "Log-Log Model Implementation", "description": "Developed alternative model specification to capture diminishing returns, with elasticities ranging from 0.035-0.430."},
+        {"task": "Elasticity Calculation Enhancement", "description": "Implemented corrected elasticity calculation framework for different model specifications (linear-linear, log-log, semi-log, log-linear)."},
+        {"task": "Response Curve Visualization", "description": "Created visualization tools to understand marginal effects and diminishing returns by channel."},
+        {"task": "Model Diagnostics Enhancement", "description": "Developed comprehensive model diagnostics module with residual analysis, stability assessment, sensitivity testing, and model validation extensions."}
+      ],
+      "remaining_tasks": [
+        {"task": "Documentation", "priority": "Medium", "description": "Create comprehensive documentation of methodology and interpretation guidelines.", "estimated_completion": "1-2 days"},
+        {"task": "Code Refactoring", "priority": "Low", "description": "Clean up code structure for maintainability and API readiness.", "estimated_completion": "1-2 days"}
+      ],
+      "technical_learnings": [
+        "Extreme multicollinearity in media variables requires dimensionality reduction (PCA) rather than simple regularization",
+        "Constrained optimization is necessary to ensure theoretically valid elasticities (non-negative marketing effects)",
+        "Channel grouping improves model stability while maintaining interpretability",
+        "Component-based adstock transformations perform better than direct media transformations",
+        "Standard OLS models produce unstable and counterintuitive elasticities due to correlation structure",
+        "Log transformation of target variable addresses non-stationarity issues",
+        "PCA reduces multicollinearity but may result in models with lower predictive power than expected",
+        "Proper elasticity scaling is critical for budget optimization to avoid numerical instability",
+        "Different optimization approaches produce dramatically different allocation strategies",
+        "Adstock transformations need to be applied carefully to both raw media variables and PCA components",
+        "Elasticity calculation must account for model type (linear-linear, log-log, semi-log, log-linear) to ensure valid results",
+        "Log-log models often sacrifice some in-sample fit for better real-world generalizability and more stable elasticities",
+        "Synthetic test data may favor simpler model specifications while real-world data typically exhibits diminishing returns better captured by log-log models",
+        "Order of transformations matters: apply adstock first, then diminishing returns transformations for optimal results",
+        "Linear models frequently exhibit heteroskedasticity when applied to marketing data, supporting the use of log transformations",
+        "Coefficient stability assessment via resampling is critical for identifying reliable elasticity estimates",
+        "Monte Carlo simulation reveals elasticity sensitivity to data perturbations, helping quantify confidence intervals",
+        "Comparison across model specifications provides a robust framework for model selection with clear confidence metrics"
+      ]
+    },
+    {
+      "phase": "Phase 3",
+      "title": "API Integration & Data Access",
+      "duration": "1–2 Weeks",
+      "status": "Pending",
+      "objective": "Integrate FastAPI backend with PostgreSQL (processed data from Funnel.io).",
+      "tasks": [
+        {"task": "Database Connection Setup", "duration": "2–3 Days", "description": "Configure FastAPI to connect to PostgreSQL securely."},
+        {"task": "API Endpoint Development", "duration": "3–5 Days", "description": "Create endpoints to query the database and run the MMM."},
+        {"task": "Testing & Debugging", "duration": "2–4 Days", "description": "Use Postman/cURL to validate responses and write unit tests."}
+      ]
+    },
+    {
+      "phase": "Phase 4",
+      "title": "Frontend Integration via Bubble.io",
+      "duration": "1–2 Weeks",
+      "status": "Pending",
+      "objective": "Develop a user-friendly interface using Bubble.io to interact with MMM results.",
+      "tasks": [
+        {"task": "UI/UX Design", "duration": "3–4 Days", "description": "Design and build the dashboard in Bubble.io."},
+        {"task": "API Connector Setup", "duration": "3–4 Days", "description": "Configure Bubble's API Connector for FastAPI integration."},
+        {"task": "User Flow Testing", "duration": "2–3 Days", "description": "Validate end-to-end data retrieval and model result display."}
+      ]
+    },
+    {
+      "phase": "Phase 5",
+      "title": "Deployment & Hosting",
+      "duration": "1 Week",
+      "status": "Pending",
+      "objective": "Package and deploy the FastAPI backend using Docker and Render.",
+      "tasks": [
+        {"task": "Dockerization", "duration": "2–3 Days", "description": "Create a Dockerfile and test the image locally."},
+        {"task": "Deploy to Render", "duration": "2–3 Days", "description": "Connect Git to Render, configure builds, and set environment variables."},
+        {"task": "Integration Verification", "duration": "1 Day", "description": "Ensure Bubble.io connects correctly to the deployed API."}
+      ]
+    },
+    {
+      "phase": "Phase 6",
+      "title": "QA, Refinement & MVP Launch Prep",
+      "duration": "1 Week",
+      "status": "Pending",
+      "objective": "Perform testing, refine all components, and prepare for launch.",
+      "tasks": [
+        {"task": "End-to-End Testing", "duration": "3–4 Days", "description": "Simulate real-world usage and conduct load testing."},
+        {"task": "Bug Fixing & Refinement", "duration": "2 Days", "description": "Resolve issues and finalize documentation."},
+        {"task": "Final Documentation & Launch Prep", "duration": "1 Day", "description": "Prepare user guides and launch materials."}
+      ]
+    }
+  ],
+  "data_requirements": {
+    "inputs": {
+      "media_data": {
+        "required_columns": ["date", "channel", "spend"],
+        "recommended_columns": ["impressions", "clicks", "conversions"],
+        "minimum_timespan": "18 months",
+        "frequency": "Weekly or daily preferred"
+      },
+      "business_data": {
+        "required_columns": ["date", "revenue", "units_sold"],
+        "recommended_columns": ["new_customers", "website_visits", "conversion_rate"]
+      },
+      "control_variables": {
+        "required": ["price_index", "competitor_price_index"],
+        "recommended": ["gdp_index", "consumer_confidence", "seasonality_indicators"]
+      }
+    },
+    "preprocessing": {
+      "stationarity_check": "ADF test for stationarity with log transformation if needed",
+      "adstock_parameters": {
+        "tv_spend": {"decay_rate": 0.85, "max_lag": 8},
+        "digital_display_spend": {"decay_rate": 0.7, "max_lag": 4},
+        "search_spend": {"decay_rate": 0.3, "max_lag": 2},
+        "social_media_spend": {"decay_rate": 0.6, "max_lag": 5},
+        "video_spend": {"decay_rate": 0.75, "max_lag": 6},
+        "email_spend": {"decay_rate": 0.4, "max_lag": 3}
+      },
+      "channel_grouping": {
+        "traditional_spend": ["tv_spend"],
+        "paid_digital_spend": ["digital_display_spend", "search_spend", "video_spend"],
+        "social_spend": ["social_media_spend"],
+        "owned_media_spend": ["email_spend"]
+      },
+      "transformation_sequence": {
+        "recommended_order": [
+          "1. Apply adstock transformations to model carryover effects",
+          "2. Apply diminishing returns transformations (log, power, or hill functions)",
+          "3. Apply channel grouping to reduce dimensionality",
+          "4. Apply PCA for extreme multicollinearity if needed"
+        ],
+        "alternative_approaches": [
+          "Direct log-log modeling without adstock for quick analysis",
+          "Adstock-then-PCA for highly correlated media with different decay patterns",
+          "Channel grouping before adstock for simplified interpretation"
+        ]
+      }
+    }
+  },
+  "implementation_guidelines": {
+    "modeling_approach": {
+      "summary": "Log-log model with adstock transformations",
+      "steps": [
+        "Apply adstock transformations to media variables to capture carryover effects",
+        "Apply log transformation to both target and media variables to model diminishing returns",
+        "Group correlated media channels into logical clusters if needed",
+        "Use constrained optimization to ensure non-negative elasticities",
+        "Calculate elasticities directly from log-log model coefficients",
+        "Validate model using comprehensive diagnostics suite",
+        "Use elasticities for budget optimization"
+      ],
+      "alternative_approaches": [
+        {
+          "name": "Log-Log Model",
+          "strengths": [
+            "Directly models diminishing returns",
+            "Coefficients directly represent elasticities",
+            "Performs well when marketing spend varies widely",
+            "Better represents typical marketing response patterns",
+            "Addresses heteroskedasticity common in marketing data"
+          ],
+          "weaknesses": [
+            "May sacrifice some in-sample fit",
+            "Requires proper handling of zero values",
+            "Transformation and back-transformation add complexity"
+          ],
+          "recommended_for": "Real-world marketing data with varying spend levels (preferred approach)"
+        },
+        {
+          "name": "Linear Model with Adstock",
+          "strengths": [
+            "Simpler implementation",
+            "Better in-sample fit on some datasets",
+            "Easier to interpret"
+          ],
+          "weaknesses": [
+            "Doesn't capture diminishing returns inherently",
+            "Elasticities vary with spend level",
+            "May overestimate effects at high spend levels",
+            "Often exhibits heteroskedasticity issues"
+          ],
+          "recommended_for": "Datasets with limited spend range or linear response patterns"
+        }
+      ]
+    },
+    "common_issues": {
+      "multicollinearity": {
+        "symptoms": "VIF values >10, unstable coefficients, counterintuitive signs",
+        "solution": "Use PCA instead of traditional regularization methods"
+      },
+      "negative_elasticities": {
+        "symptoms": "Negative coefficients for media variables",
+        "solution": "Apply constrained optimization with non-negativity constraints"
+      },
+      "overfitting": {
+        "symptoms": "Large gap between training and test performance",
+        "solution": "Use cross-validation and regularization"
+      },
+      "improper_elasticity_scaling": {
+        "symptoms": "Extreme elasticity values, infinite optimization results",
+        "solution": "Use model-specific elasticity calculation formulas based on transformation type",
+        "calculation_formulas": {
+          "linear-linear": "elasticity = coefficient * (x_mean / y_mean)",
+          "log-log": "elasticity = coefficient (direct interpretation)",
+          "semi-log": "elasticity = coefficient * (1 / y_mean)",
+          "log-linear": "elasticity = coefficient * x_mean"
+        }
+      },
+      "poor_model_fit_with_pca": {
+        "symptoms": "Negative R² values, high MAPE",
+        "solution": "Adjust number of components, try different adstock parameters, refine channel groupings"
+      },
+      "unrealistic_response_curves": {
+        "symptoms": "No diminishing returns at high spend levels, linear patterns where curved expected",
+        "solution": "Implement log or power transformations to capture saturation effects"
+      },
+      "heteroskedasticity": {
+        "symptoms": "Residuals show patterns when plotted against fitted values, Breusch-Pagan test p-value < 0.05",
+        "solution": "Apply log transformation to both target and features (use log-log model)",
+        "diagnostic_approach": "Use analyze_residuals function in model_diagnostics.py to detect"
+      },
+      "coefficient_instability": {
+        "symptoms": "Large coefficient variation in resampling tests, high CV values in jackknife analysis",
+        "solution": "Use regularization, remove or combine highly collinear features, increase sample size if possible",
+        "diagnostic_approach": "Use jackknife_resampling or monte_carlo_simulation functions in model_diagnostics.py"
+      }
+    },
+    "diagnostic_procedures": {
+      "residual_analysis": {
+        "purpose": "Validate model assumptions and identify statistical issues",
+        "tests": [
+          "Normality (Shapiro-Wilk test)",
+          "Autocorrelation (Durbin-Watson test)",
+          "Heteroskedasticity (Breusch-Pagan test)"
+        ],
+        "visualization": "Residuals vs. predicted, QQ plot, residual histogram, residuals over time",
+        "implementation": "analyze_residuals function in model_diagnostics.py"
+      },
+      "stability_assessment": {
+        "purpose": "Evaluate coefficient stability and model robustness",
+        "methods": [
+          "Rolling window analysis",
+          "Leave-one-out testing",
+          "Jackknife resampling"
+        ],
+        "key_metrics": "Coefficient of variation (CV), consistency of sign and significance",
+        "implementation": "rolling_window_analysis, leave_one_out_analysis, jackknife_resampling functions"
+      },
+      "sensitivity_testing": {
+        "purpose": "Assess model robustness to data perturbations and model specifications",
+        "methods": [
+          "Monte Carlo simulation",
+          "Model specification comparison",
+          "Outlier impact analysis"
+        ],
+        "key_metrics": "Elasticity range, confidence intervals, specification consistency",
+        "implementation": "monte_carlo_simulation, model_specification_comparison, outlier_impact_analysis functions"
+      },
+      "model_validation": {
+        "purpose": "Validate model predictive performance and generalizability",
+        "methods": [
+          "Time-based cross-validation",
+          "Prediction confidence intervals"
+        ],
+        "key_metrics": "Out-of-sample R², RMSE, MAPE",
+        "implementation": "time_based_validation, prediction_confidence_intervals functions"
+      },
+      "model_selection": {
+        "purpose": "Choose between competing model specifications",
+        "criteria": [
+          "Statistical validity (residual analysis)",
+          "Parameter stability (coefficient stability)",
+          "Elasticity reliability (sensitivity testing)",
+          "Predictive accuracy (validation metrics)"
+        ],
+        "implementation": "diagnose_mmm_models and generate_comprehensive_analysis_report functions"
+      }
+    },
+    "budget_optimization": {
+      "approaches": [
+        "Simple allocation based on elasticity proportions",
+        "Constrained optimization with minimum/maximum spend limits",
+        "Advanced optimization with diminishing returns modeling"
+      ],
+      "key_parameters": {
+        "elasticities": "Critical for accurate optimization; ensure proper scaling based on model type",
+        "constraints": "Set realistic minimum (20-30% of current) and maximum (200-300% of current) bounds",
+        "scenarios": "Test multiple budget levels (e.g., 80%, 100%, 120% of current)"
+      },
+      "interpretation": {
+        "revenue_lift": "Percentage increase in expected revenue",
+        "roi_improvement": "Increase in return on investment compared to current allocation",
+        "channel_shifts": "Percentage change in channel allocation from current to optimized"
+      }
+    },
+    "database_integration": {
+      "future_plans": "Move data preprocessing and transformation logic to PostgreSQL for better scalability",
+      "key_functions": [
+        "Log transformation",
+        "Adstock application",
+        "PCA preparation",
+        "Seasonality extraction"
+      ]
+    },
+    "model_selection_criteria": {
+      "fitness_metrics": {
+        "r_squared": "Measure of variance explained by the model",
+        "adjusted_r_squared": "R² adjusted for number of predictors",
+        "aic": "Akaike Information Criterion for model comparison",
+        "bic": "Bayesian Information Criterion for model comparison"
+      },
+      "prediction_accuracy": {
+        "rmse": "Root Mean Square Error for prediction accuracy",
+        "mape": "Mean Absolute Percentage Error for relative prediction accuracy"
+      },
+      "theoretical_validity": {
+        "elasticity_reasonableness": "Elasticities should be in line with marketing literature (typically 0.01-0.25)",
+        "coefficient_signs": "Media coefficients should be non-negative",
+        "diminishing_returns": "Response curves should show appropriate saturation at high spend levels"
+      },
+      "balance_considerations": "When selecting between models, balance in-sample fit with theoretical validity and generalizability to real-world data patterns"
+    }
+  },
+  "next_steps": {
+    "immediate_focus": "Complete comprehensive documentation and finalize code organization",
+    "secondary_priorities": [
+      "Implement rigorous validation on larger datasets",
+      "Develop scenario analysis capabilities for budget planning",
+      "Create visualization enhancements for model diagnostics reports"
+    ],
+    "technical_debt": [
+      "Create comprehensive unit tests for all model components",
+      "Design database schema for model storage and comparison",
+      "Improve error handling and validation for API endpoints",
+      "Implement logging and performance monitoring"
+    ],
+    "proposed_timeline": {
+      "week_1": {
+        "focus": "Complete remaining Phase 2 tasks",
+        "deliverables": [
+          "Complete technical documentation",
+          "Code refactoring for maintainability",
+          "Final validation on test datasets"
+        ]
+      },
+      "week_2": {
+        "focus": "Begin Phase 3 (API Integration)",
+        "deliverables": [
+          "Database connection setup",
+          "Initial API endpoint implementation",
+          "Testing framework for API endpoints"
+        ]
+      }
+    }
+  },
+  "key_model_insights": {
+    "standard_model": {
+      "r_squared": 0.8220,
+      "rmse": 195.22,
+      "mape": 6.73,
+      "multicollinearity": "High (VIF values ranging from 12.8 to 98.8)",
+      "elasticities": {
+        "TV_Spend": 0.4476,
+        "Digital_Spend": 0.2090,
+        "Search_Spend": 0.0900,
+        "Social_Spend": 0.0428
+      },
+      "diagnostic_findings": {
+        "residual_issues": ["Heteroskedasticity detected (p=0.0461)"],
+        "stability": "Moderate coefficient stability with CV ranging from 0.15-0.35",
+        "sensitivity": "Elasticities moderately sensitive to outliers and model specification"
+      }
+    },
+    "log_log_model": {
+      "r_squared": 0.7537,
+      "rmse": 229.66,
+      "mape": 7.68,
+      "elasticities": {
+        "TV_Spend": 0.4305,
+        "Digital_Spend": 0.2009,
+        "Search_Spend": 0.0847,
+        "Social_Spend": 0.0357
+      },
+      "elasticity_differences": {
+        "TV_Spend": -3.82,
+        "Digital_Spend": -3.90,
+        "Search_Spend": -5.91,
+        "Social_Spend": -16.50
+      },
+      "diagnostic_findings": {
+        "residual_issues": "No significant residual issues detected",
+        "stability": "Strong coefficient stability with lower CV values compared to linear model",
+        "sensitivity": "More consistent elasticities across model specifications"
+      }
+    },
+    "model_selection_recommendation": {
+      "preferred_model": "Log-Log with adstock transformations",
+      "rationale": [
+        "Better alignment with marketing theory (diminishing returns)",
+        "More direct interpretation of elasticities",
+        "Addresses heteroskedasticity issues present in linear model",
+        "More stable coefficient estimates in resampling tests",
+        "Generally more robust to outliers and data perturbations",
+        "Consistent with industry standards for Marketing Mix Modeling"
+      ],
+      "implementation_recommendation": "Use Log-Log model for production deployment with adstock transformations applied first, then log transformation"
+    },
+    "diagnostic_capabilities": {
+      "residual_analysis": "Comprehensive statistical testing and visualization for model validity",
+      "stability_assessment": "Multiple resampling approaches to evaluate parameter stability",
+      "sensitivity_testing": "Robust methods to assess elasticity reliability across specifications",
+      "model_validation": "Time-based cross-validation and confidence interval estimation",
+      "command_line_tool": "Interactive diagnostics through run_mmm_diagnostics.py script",
+      "integration": "Seamless connection with existing MMM framework via diagnostics_integration.py"
+    }
+  }
+}
+
+{
+  "project_name": "Marketing Mix Model (MMM) Development",
+  "timeline": "8–10 weeks",
+  "current_status": {
     "overall_completion": "85-90%",
     "phase_focus": "Phase 2 (MMM Development)",
     "last_updated": "March 01, 2025"

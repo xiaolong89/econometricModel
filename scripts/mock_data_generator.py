@@ -419,12 +419,12 @@ if __name__ == "__main__":
     mock_data = generate_mock_mmm_data(start_date='2020-01-01', end_date='2023-12-31')
 
     # Save to CSV
-    csv_path = 'mock_marketing_data.csv'
+    csv_path = '../data/mock_marketing_data.csv'
     mock_data.to_csv(csv_path, index=False)
     print(f"Mock data saved to {csv_path}")
 
     # Create SQL dump
-    sql_path = 'marketing_data.sql'
+    sql_path = '../examples/marketing_data.sql'
     create_sql_dump(mock_data, file_path=sql_path)
     print(f"SQL dump saved to {sql_path}")
 
