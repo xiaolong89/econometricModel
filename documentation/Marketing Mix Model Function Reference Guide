@@ -1,0 +1,253 @@
+# Marketing Mix Model Function Reference Guide
+
+## Preprocessing Functions (`mmm/preprocessing.py`)
+
+### `detect_media_columns(df)`
+- **Purpose**: Automatically identify marketing channel columns in a dataset
+- **Input**: DataFrame
+- **Output**: List of media column names
+- **Key Features**:
+  - Uses predefined keywords to detect marketing spend columns
+  - Flexible detection across various column naming conventions
+
+### `detect_control_columns(df, target_col, date_col, media_cols)`
+- **Purpose**: Automatically identify control variables in the dataset
+- **Input**:
+  - DataFrame
+  - Target column name
+  - Date column name
+  - Media column names
+- **Output**: List of control column names
+- **Key Features**:
+  - Identifies potential control variables based on economic and contextual keywords
+  - Excludes target, date, and media columns
+
+### `check_stationarity(series)`
+- **Purpose**: Check if a time series is stationary using Augmented Dickey-Fuller test
+- **Input**: Pandas Series
+- **Output**:
+  - Boolean (is stationary)
+  - ADF test statistic
+  - p-value
+- **Key Features**:
+  - Determines if a time series has constant statistical properties
+  - Helps in selecting appropriate transformations
+
+### `make_stationary(df, target_col, transformation_type='log')`
+- **Purpose**: Transform target variable to achieve stationarity
+- **Input**:
+  - DataFrame
+  - Target column name
+  - Transformation type (log, diff, log_diff)
+- **Output**:
+  - Transformed DataFrame
+  - New target column name
+  - Transformation information
+- **Key Features**:
+  - Applies log or differencing transformations
+  - Handles non-stationary time series
+
+### `apply_diminishing_returns_transformations(df, media_cols, method='log')`
+- **Purpose**: Apply transformations to capture diminishing returns in marketing spend
+- **Input**:
+  - DataFrame
+  - Media column names
+  - Transformation method
+- **Output**:
+  - Transformed DataFrame
+  - List of transformed column names
+- **Transformation Methods**:
+  - Log transformation
+  - Hill function
+  - Power transformation
+
+## Adstock Functions (`mmm/adstock.py`)
+
+### `apply_adstock(series, decay_rate=0.7, lag_weight=0.3, max_lag=4)`
+- **Purpose**: Apply adstock transformation to model marketing impact over time
+- **Input**:
+  - Time series data
+  - Decay rate
+  - Lag weight
+  - Maximum lag periods
+- **Output**: Transformed time series with carryover effects
+- **Key Features**:
+  - Captures lasting impact of marketing activities
+  - Handles different decay patterns
+
+### `geometric_adstock(series, decay_rate=0.7, max_lag=10)`
+- **Purpose**: Apply geometric (exponential) adstock transformation
+- **Input**:
+  - Time series data
+  - Decay rate
+  - Maximum lag periods
+- **Output**: Adstocked series with exponential decay
+
+### `weibull_adstock(series, shape=2.0, scale=2.0, max_lag=10)`
+- **Purpose**: Apply Weibull distribution-based adstock transformation
+- **Input**:
+  - Time series data
+  - Shape parameter
+  - Scale parameter
+  - Maximum lag periods
+- **Output**: Adstocked series with flexible response shape
+
+### `delayed_adstock(series, peak_lag=2, decay_rate=0.7, max_lag=10)`
+- **Purpose**: Apply delayed adstock transformation with peak effect
+- **Input**:
+  - Time series data
+  - Peak lag period
+  - Decay rate
+  - Maximum lag periods
+- **Output**: Adstocked series with delayed peak effect
+
+## Core Modeling Functions (`mmm/modeling.py`)
+
+### `calculate_elasticities(model, X, y, feature_dict=None)`
+- **Purpose**: Calculate elasticities for marketing channels
+- **Input**:
+  - Fitted model
+  - Feature matrix
+  - Target variable
+  - Optional feature dictionary
+- **Output**: DataFrame with elasticity calculations
+- **Key Features**:
+  - Handles different model transformation types
+  - Provides detailed elasticity interpretation
+
+### `fit_ridge_model(X, y, alphas=None, cv=5, feature_names=None)`
+- **Purpose**: Fit Ridge regression model with cross-validation
+- **Input**:
+  - Feature matrix
+  - Target variable
+  - Alpha values to test
+  - Cross-validation splits
+  - Feature names
+- **Output**:
+  - Fitted model
+  - Performance metrics
+  - Scaler
+
+### `fit_lasso_model(X, y, alphas=None, cv=5, feature_names=None)`
+- **Purpose**: Fit Lasso regression model with cross-validation
+- **Input**:
+  - Feature matrix
+  - Target variable
+  - Alpha values to test
+  - Cross-validation splits
+  - Feature names
+- **Output**:
+  - Fitted model
+  - Performance metrics
+  - Scaler
+
+### `evaluate_model(model, X_test, y_test, scaler=None, inverse_transform_func=None)`
+- **Purpose**: Evaluate model performance on test data
+- **Input**:
+  - Fitted model
+  - Test features
+  - Test target values
+  - Optional scaler
+  - Optional inverse transformation function
+- **Output**: Dictionary of performance metrics
+
+## Optimization Functions (`mmm/optimization.py`)
+
+### `simple_budget_allocation(elasticities, total_budget, current_allocation)`
+- **Purpose**: Allocate budget based on channel elasticities
+- **Input**:
+  - Elasticities dictionary
+  - Total budget
+  - Current allocation
+- **Output**: Optimized budget allocation
+
+### `optimize_budget_allocation(elasticities, current_spend, current_revenue, total_budget, min_spend=None, max_spend=None)`
+- **Purpose**: Advanced budget optimization with constraints
+- **Input**:
+  - Elasticities
+  - Current spend
+  - Current revenue
+  - Total budget
+  - Optional minimum/maximum spend constraints
+- **Output**: Comprehensive optimization results with revenue projections
+
+### `calculate_revenue_impact(spend_changes, elasticities, current_spend, current_revenue)`
+- **Purpose**: Calculate expected revenue from proposed spend changes
+- **Input**:
+  - Proposed spend changes
+  - Elasticities
+  - Current spend
+  - Current revenue
+- **Output**: Expected new revenue
+
+## Visualization Functions (`mmm/visualization.py`)
+
+### `plot_actual_vs_predicted(y_true, y_pred, title="Actual vs. Predicted Values")`
+- **Purpose**: Create a visualization comparing actual and predicted values
+- **Input**:
+  - Actual values
+  - Predicted values
+  - Optional plot title
+- **Output**: Matplotlib figure
+
+### `plot_channel_contributions(coefficients, feature_values, feature_names=None)`
+- **Purpose**: Visualize marketing channel contributions
+- **Input**:
+  - Model coefficients
+  - Feature mean values
+  - Optional feature names
+- **Output**: Matplotlib figure showing channel impacts
+
+### `plot_correlation_matrix(data, title="Feature Correlation Matrix")`
+- **Purpose**: Create a correlation matrix heatmap
+- **Input**:
+  - DataFrame or correlation matrix
+  - Optional plot title
+- **Output**: Matplotlib figure showing feature correlations
+
+## Utility Functions (`mmm/utils.py`)
+
+### `calculate_vif(X)`
+- **Purpose**: Calculate Variance Inflation Factor to detect multicollinearity
+- **Input**: Feature matrix
+- **Output**: DataFrame with VIF values for each feature
+
+### `evaluate_model_performance(y_true, y_pred)`
+- **Purpose**: Calculate comprehensive model performance metrics
+- **Input**:
+  - Actual values
+  - Predicted values
+- **Output**: Dictionary of performance metrics
+
+## Core Model Functions (`mmm/core.py`)
+
+### `MarketingMixModel` Class Methods
+- `load_data()`: Load data from CSV
+- `preprocess_data()`: Prepare data for modeling
+- `apply_adstock()`: Apply adstock transformation
+- `fit_model()`: Fit OLS regression model
+- `calculate_elasticities()`: Calculate channel elasticities
+- `optimize_budget()`: Optimize budget allocation
+- `generate_summary_report()`: Create comprehensive model report
+
+## Deployment Functions (`examples/run_mmm_workflow.py`)
+
+### `run_complete_mmm_workflow(data_path)`
+- **Purpose**: Execute complete Marketing Mix Model workflow
+- **Input**: Path to marketing data file
+- **Output**: Comprehensive model results, insights, and visualizations
+- **Key Stages**:
+  1. Data loading
+  2. Preprocessing
+  3. Model training
+  4. Insight generation
+  5. Budget optimization
+
+## Continuous Improvement
+
+This reference guide will be continuously updated as new functions are added or existing functions are modified. Always refer to the most recent documentation and source code for the most accurate information.
+
+### Contribution Guidelines
+- Keep function documentation clear and concise
+- Document input parameters, outputs, and key features
+- Update this reference when making code changes
