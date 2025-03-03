@@ -1,0 +1,26 @@
+{
+  "basic_dataset": {
+    "file": "basic_test_data.csv",
+    "n_periods": 100,
+    "expected_elasticities": {
+      "TV_Spend": 0.2,
+      "Digital_Spend": 0.15,
+      "Search_Spend": 0.25,
+      "Social_Spend": 0.1
+    }
+  },
+  "edge_cases": {
+    "zero_spend": {
+      "file": "basic_zero_spend_data.csv"
+    },
+    "missing_values": {
+      "file": "basic_missing_values_data.csv"
+    },
+    "outliers": {
+      "file": "basic_outliers_data.csv"
+    },
+    "small_dataset": {
+      "file": "basic_small_dataset_data.csv"
+    }
+  }
+}
