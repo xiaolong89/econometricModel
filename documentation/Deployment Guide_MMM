@@ -1,0 +1,1214 @@
+# Marketing Mix Model Deployment Guide
+
+## Table of Contents
+1. [Deployment Overview](#deployment-overview)
+2. [Environment Setup](#environment-setup)
+3. [Docker Deployment](#docker-deployment)
+4. [Kubernetes Deployment](#kubernetes-deployment)
+5. [Cloud Service Integration](#cloud-service-integration)
+6. [API Configuration](#api-configuration)
+7. [Database Configuration](#database-configuration)
+8. [Scaling Considerations](#scaling-considerations)
+9. [Monitoring and Logging](#monitoring-and-logging)
+10. [Security Considerations](#security-considerations)
+11. [Continuous Integration/Deployment](#continuous-integrationdeployment)
+12. [Troubleshooting](#troubleshooting)
+
+## Deployment Overview
+
+The Marketing Mix Model (MMM) framework can be deployed in various configurations:
+
+1. **Standalone Python Package**: For data scientists and analysts working locally
+2. **API Service**: For integration with other systems and frontends
+3. **Containerized Service**: For cloud and Kubernetes deployments
+4. **Web Application**: With frontend for business users
+
+This guide focuses on deploying the MMM as a service with an API interface, using containerization for scalability and portability.
+
+## Environment Setup
+
+### Prerequisites
+
+- Python 3.8+
+- pip (Python package manager)
+- Docker (for containerization)
+- FastAPI (for API service)
+- PostgreSQL (for data storage)
+- Render.com account (for cloud deployment)
+
+### Local Environment Setup
+
+1. Set up a Python virtual environment:
+```bash
+python -m venv mmm-env
+source mmm-env/bin/activate  # On Windows: mmm-env\Scripts\activate
+```
+
+2. Install the MMM package and dependencies:
+```bash
+pip install -r requirements.txt
+pip install .
+```
+
+3. Install service dependencies:
+```bash
+pip install fastapi uvicorn psycopg2-binary
+```
+
+4. Create environment variables file (`.env`):
+```
+DATABASE_URL=postgresql://user:password@localhost:5432/mmm_db
+API_KEY=your_secret_api_key
+LOG_LEVEL=INFO
+ENVIRONMENT=development
+```
+
+## Docker Deployment
+
+### Dockerfile
+
+Create a `Dockerfile` in the project root:
+
+```dockerfile
+# Base image
+FROM python:3.9-slim
+
+# Set working directory
+WORKDIR /app
+
+# Copy requirements and install dependencies
+COPY requirements.txt .
+COPY service-requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r service-requirements.txt
+
+# Copy application code
+COPY . .
+
+# Install the package
+RUN pip install -e .
+
+# Expose port
+EXPOSE 8000
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV MODULE_NAME=mmm_api.main
+ENV PORT=8000
+
+# Command to run the application
+CMD ["uvicorn", "mmm_api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+### Build and Run Docker Container
+
+1. Build the Docker image:
+```bash
+docker build -t mmm-service:latest .
+```
+
+2. Run the container:
+```bash
+docker run -d \
+  --name mmm-service \
+  -p 8000:8000 \
+  -e DATABASE_URL=postgresql://user:password@host.docker.internal:5432/mmm_db \
+  -e API_KEY=your_secret_api_key \
+  mmm-service:latest
+```
+
+3. For local development with hot reloading:
+```bash
+docker run -d \
+  --name mmm-service-dev \
+  -p 8000:8000 \
+  -v $(pwd):/app \
+  -e DATABASE_URL=postgresql://user:password@host.docker.internal:5432/mmm_db \
+  -e API_KEY=your_secret_api_key \
+  mmm-service:latest \
+  uvicorn mmm_api.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+### Docker Compose
+
+Create a `docker-compose.yml` for multi-container setup:
+
+```yaml
+version: '3.8'
+
+services:
+  mmm-api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/mmm_db
+      - API_KEY=${API_KEY}
+      - LOG_LEVEL=INFO
+      - ENVIRONMENT=production
+    depends_on:
+      - db
+    restart: always
+
+  db:
+    image: postgres:14
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=mmm_db
+    ports:
+      - "5432:5432"
+
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@example.com
+      - PGADMIN_DEFAULT_PASSWORD=admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
+```
+
+To run with Docker Compose:
+```bash
+docker-compose up -d
+```
+
+## Kubernetes Deployment
+
+### Kubernetes Manifests
+
+Create a directory `k8s/` with the following files:
+
+1. `namespace.yaml`:
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mmm
+```
+
+2. `configmap.yaml`:
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mmm-config
+  namespace: mmm
+data:
+  LOG_LEVEL: "INFO"
+  ENVIRONMENT: "production"
+```
+
+3. `secret.yaml`:
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mmm-secrets
+  namespace: mmm
+type: Opaque
+data:
+  API_KEY: <base64-encoded-api-key>
+  DATABASE_URL: <base64-encoded-db-url>
+```
+
+4. `deployment.yaml`:
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mmm-api
+  namespace: mmm
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mmm-api
+  template:
+    metadata:
+      labels:
+        app: mmm-api
+    spec:
+      containers:
+      - name: mmm-api
+        image: your-registry/mmm-service:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: mmm-config
+              key: LOG_LEVEL
+        - name: ENVIRONMENT
+          valueFrom:
+            configMapKeyRef:
+              name: mmm-config
+              key: ENVIRONMENT
+        - name: API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: mmm-secrets
+              key: API_KEY
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: mmm-secrets
+              key: DATABASE_URL
+        resources:
+          limits:
+            cpu: "1"
+            memory: "2Gi"
+          requests:
+            cpu: "0.5"
+            memory: "1Gi"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 60
+```
+
+5. `service.yaml`:
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: mmm-api
+  namespace: mmm
+spec:
+  selector:
+    app: mmm-api
+  ports:
+  - port: 80
+    targetPort: 8000
+  type: ClusterIP
+```
+
+6. `ingress.yaml`:
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mmm-ingress
+  namespace: mmm
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  tls:
+  - hosts:
+    - mmm-api.yourdomain.com
+    secretName: mmm-tls
+  rules:
+  - host: mmm-api.yourdomain.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: mmm-api
+            port:
+              number: 80
+```
+
+### Deploying to Kubernetes
+
+Apply the manifests in the correct order:
+
+```bash
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/configmap.yaml
+kubectl apply -f k8s/secret.yaml
+kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/service.yaml
+kubectl apply -f k8s/ingress.yaml
+```
+
+### Helm Chart (Optional)
+
+For more complex deployments, create a Helm chart:
+
+```bash
+helm create mmm-chart
+```
+
+Edit the generated files to match your application's requirements.
+
+To install the Helm chart:
+```bash
+helm install mmm ./mmm-chart -n mmm
+```
+
+## Cloud Service Integration
+
+### Render.com Deployment
+
+1. Push your code to a Git repository
+
+2. In your Render.com dashboard, click "New" and select "Web Service"
+
+3. Connect to your repository
+
+4. Configure the service:
+   - Name: `mmm-api`
+   - Environment: Docker
+   - Branch: `main`
+   - Build Command: Leave empty (uses Dockerfile)
+   - Start Command: Leave empty (uses CMD in Dockerfile)
+
+5. Add environment variables:
+   - `DATABASE_URL`
+   - `API_KEY`
+   - `LOG_LEVEL`
+   - `ENVIRONMENT`
+
+6. Configure scaling options:
+   - Choose appropriate instance type
+   - Set auto-scaling parameters if needed
+
+7. Click "Create Web Service"
+
+### AWS Elastic Beanstalk Deployment
+
+1. Install the EB CLI:
+```bash
+pip install awsebcli
+```
+
+2. Initialize EB CLI:
+```bash
+eb init -p docker mmm-api
+```
+
+3. Create an environment:
+```bash
+eb create mmm-api-production
+```
+
+4. Set environment variables:
+```bash
+eb setenv DATABASE_URL=<db-url> API_KEY=<api-key> LOG_LEVEL=INFO ENVIRONMENT=production
+```
+
+5. Deploy the application:
+```bash
+eb deploy
+```
+
+### Google Cloud Run Deployment
+
+1. Build and push the Docker image to Google Container Registry:
+```bash
+gcloud builds submit --tag gcr.io/your-project/mmm-api
+```
+
+2. Deploy to Cloud Run:
+```bash
+gcloud run deploy mmm-api \
+  --image gcr.io/your-project/mmm-api \
+  --platform managed \
+  --region us-central1 \
+  --set-env-vars DATABASE_URL=<db-url>,API_KEY=<api-key>,LOG_LEVEL=INFO,ENVIRONMENT=production
+```
+
+## API Configuration
+
+### FastAPI Setup
+
+Create a directory `mmm_api/` with the following files:
+
+1. `main.py`:
+```python
+import os
+from fastapi import FastAPI, Depends, HTTPException, Security
+from fastapi.security.api_key import APIKeyHeader, APIKey
+from typing import Dict, List, Optional
+import logging
+
+from mmm.core import MarketingMixModel
+from .schemas import (
+    DataInput, PreprocessParams, AdstockParams,
+    ModelOutput, OptimizationInput, OptimizationOutput
+)
+from .database import get_db, save_model, load_model
+
+# Setup logging
+logging.basicConfig(
+    level=getattr(logging, os.getenv("LOG_LEVEL", "INFO")),
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
+
+# Initialize FastAPI app
+app = FastAPI(
+    title="Marketing Mix Model API",
+    description="API for the Marketing Mix Model framework",
+    version="1.0.0"
+)
+
+# API Key security
+API_KEY = os.getenv("API_KEY")
+API_KEY_NAME = "X-API-Key"
+api_key_header = APIKeyHeader(name=API_KEY_NAME)
+
+async def get_api_key(api_key: str = Security(api_key_header)):
+    if api_key == API_KEY:
+        return api_key
+    raise HTTPException(status_code=403, detail="Invalid API Key")
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint."""
+    return {"status": "healthy"}
+
+@app.post("/api/v1/models", response_model=Dict[str, str])
+async def create_model(
+    data_input: DataInput,
+    api_key: APIKey = Depends(get_api_key),
+    db = Depends(get_db)
+):
+    """Create a new MMM model."""
+    try:
+        # Initialize MMM
+        mmm = MarketingMixModel()
+
+        # Load data from provided CSV or DataFrame
+        if data_input.csv_data:
+            # Save CSV to temporary file
+            with open("temp_data.csv", "w") as f:
+                f.write(data_input.csv_data)
+            mmm.load_data("temp_data.csv")
+        else:
+            # Handle DataFrame data input
+            pass
+
+        # Save the initialized model
+        model_id = save_model(db, mmm, data_input.model_name)
+
+        return {"model_id": model_id, "status": "initialized"}
+    except Exception as e:
+        logger.error(f"Error creating model: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/v1/models/{model_id}/preprocess")
+async def preprocess_data(
+    model_id: str,
+    params: PreprocessParams,
+    api_key: APIKey = Depends(get_api_key),
+    db = Depends(get_db)
+):
+    """Preprocess data for an existing model."""
+    try:
+        # Load the model
+        mmm = load_model(db, model_id)
+
+        # Preprocess data
+        mmm.preprocess_data(
+            target=params.target,
+            date_col=params.date_col,
+            media_cols=params.media_cols,
+            control_cols=params.control_cols
+        )
+
+        # Save the updated model
+        save_model(db, mmm, model_id=model_id)
+
+        return {"status": "preprocessing completed"}
+    except Exception as e:
+        logger.error(f"Error preprocessing data: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Add more endpoints for adstock, model fitting, optimization, etc.
+```
+
+2. `schemas.py`:
+```python
+from pydantic import BaseModel
+from typing import Dict, List, Optional, Any, Union
+
+class DataInput(BaseModel):
+    model_name: str
+    csv_data: Optional[str] = None
+    dataframe_data: Optional[Dict[str, List[Any]]] = None
+
+class PreprocessParams(BaseModel):
+    target: str
+    date_col: Optional[str] = None
+    media_cols: Optional[List[str]] = None
+    control_cols: Optional[List[str]] = None
+
+class AdstockParams(BaseModel):
+    media_cols: List[str]
+    decay_rates: Optional[Dict[str, float]] = None
+    lag_weights: Optional[Dict[str, float]] = None
+    max_lags: Optional[Dict[str, int]] = None
+
+class ModelOutput(BaseModel):
+    r_squared: float
+    adjusted_r_squared: float
+    elasticities: Dict[str, float]
+    coefficients: Dict[str, float]
+    feature_importance: Dict[str, float]
+
+class OptimizationInput(BaseModel):
+    total_budget: float
+    min_budget: Optional[Dict[str, float]] = None
+    max_budget: Optional[Dict[str, float]] = None
+
+class OptimizationOutput(BaseModel):
+    optimized_allocation: Dict[str, float]
+    expected_lift: float
+    roi_improvement: float
+```
+
+3. `database.py`:
+```python
+import os
+import pickle
+from typing import Dict, Any
+import logging
+import psycopg2
+from psycopg2.extras import Json
+import uuid
+
+logger = logging.getLogger(__name__)
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+def get_db():
+    """Get database connection."""
+    conn = psycopg2.connect(DATABASE_URL)
+    try:
+        yield conn
+    finally:
+        conn.close()
+
+def save_model(conn, mmm, model_name=None, model_id=None):
+    """Save model to database."""
+    # If no model_id provided, generate a new one
+    if model_id is None:
+        model_id = str(uuid.uuid4())
+
+    # Serialize the model
+    serialized_model = pickle.dumps(mmm)
+
+    cursor = conn.cursor()
+
+    try:
+        # Check if model exists
+        cursor.execute(
+            "SELECT COUNT(*) FROM mmm_models WHERE id = %s",
+            (model_id,)
+        )
+        exists = cursor.fetchone()[0] > 0
+
+        if exists:
+            # Update existing model
+            cursor.execute(
+                """
+                UPDATE mmm_models
+                SET model_data = %s, updated_at = NOW()
+                WHERE id = %s
+                """,
+                (serialized_model, model_id)
+            )
+        else:
+            # Insert new model
+            cursor.execute(
+                """
+                INSERT INTO mmm_models (id, name, model_data, created_at, updated_at)
+                VALUES (%s, %s, %s, NOW(), NOW())
+                """,
+                (model_id, model_name, serialized_model)
+            )
+
+        conn.commit()
+        return model_id
+    except Exception as e:
+        conn.rollback()
+        logger.error(f"Error saving model: {str(e)}", exc_info=True)
+        raise
+    finally:
+        cursor.close()
+
+def load_model(conn, model_id):
+    """Load model from database."""
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute(
+            "SELECT model_data FROM mmm_models WHERE id = %s",
+            (model_id,)
+        )
+
+        result = cursor.fetchone()
+        if result is None:
+            raise ValueError(f"Model with ID {model_id} not found")
+
+        serialized_model = result[0]
+        return pickle.loads(serialized_model)
+    except Exception as e:
+        logger.error(f"Error loading model: {str(e)}", exc_info=True)
+        raise
+    finally:
+        cursor.close()
+```
+
+### API Documentation with Swagger/OpenAPI
+
+FastAPI automatically generates interactive documentation:
+
+- Swagger UI: `http://your-service-url/docs`
+- ReDoc: `http://your-service-url/redoc`
+
+To customize the documentation:
+```python
+app = FastAPI(
+    title="Marketing Mix Model API",
+    description="API for running Marketing Mix Models and budget optimization",
+    version="1.0.0",
+    openapi_tags=[
+        {"name": "models", "description": "Operations with MMM models"},
+        {"name": "optimization", "description": "Budget optimization operations"}
+    ],
+    docs_url="/docs",
+    redoc_url="/redoc",
+)
+```
+
+Add tags to endpoints:
+```python
+@app.post("/api/v1/models", response_model=Dict[str, str], tags=["models"])
+async def create_model():
+    # Implementation...
+```
+
+## Database Configuration
+
+### PostgreSQL Schema
+
+Create tables for model storage:
+
+```sql
+-- Models table
+CREATE TABLE mmm_models (
+    id UUID PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    model_data BYTEA NOT NULL,
+    metadata JSONB DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL
+);
+
+-- Results table
+CREATE TABLE mmm_results (
+    id UUID PRIMARY KEY,
+    model_id UUID REFERENCES mmm_models(id),
+    result_data JSONB NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    CONSTRAINT fk_model FOREIGN KEY (model_id) REFERENCES mmm_models(id) ON DELETE CASCADE
+);
+
+-- Optimizations table
+CREATE TABLE mmm_optimizations (
+    id UUID PRIMARY KEY,
+    model_id UUID REFERENCES mmm_models(id),
+    optimization_data JSONB NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    CONSTRAINT fk_model FOREIGN KEY (model_id) REFERENCES mmm_models(id) ON DELETE CASCADE
+);
+```
+
+### Database Migration
+
+Use Alembic for database migrations:
+
+1. Install Alembic:
+```bash
+pip install alembic
+```
+
+2. Initialize Alembic:
+```bash
+alembic init migrations
+```
+
+3. Edit `alembic.ini` to set the database URL
+
+4. Create a migration:
+```bash
+alembic revision --autogenerate -m "Initial schema"
+```
+
+5. Apply the migration:
+```bash
+alembic upgrade head
+```
+
+### Database Connection Pooling
+
+For production environments, use connection pooling:
+
+```python
+from psycopg2 import pool
+
+# Global connection pool
+connection_pool = pool.ThreadedConnectionPool(
+    minconn=5,
+    maxconn=20,
+    dsn=DATABASE_URL
+)
+
+def get_db():
+    """Get database connection from pool."""
+    conn = connection_pool.getconn()
+    try:
+        yield conn
+    finally:
+        connection_pool.putconn(conn)
+```
+
+## Scaling Considerations
+
+### Horizontal Scaling
+
+For API services, enable horizontal scaling:
+
+1. **Stateless Design**: Ensure the API is stateless, storing all state in the database
+2. **Load Balancing**: Use Kubernetes or cloud load balancers
+3. **Caching**: Implement Redis for caching frequently accessed models or results
+
+### Vertical Scaling
+
+For computation-intensive operations:
+
+1. **Resource Allocation**: Assign appropriate CPU and memory limits:
+   ```yaml
+   resources:
+     limits:
+       cpu: "2"
+       memory: "4Gi"
+     requests:
+       cpu: "1"
+       memory: "2Gi"
+   ```
+
+2. **Batch Processing**: For large datasets, implement batch processing
+3. **Async Computation**: Use background workers for long computations:
+   ```python
+   from celery import Celery
+
+   celery_app = Celery('mmm_tasks', broker='redis://localhost:6379/0')
+
+   @celery_app.task
+   def fit_model_task(model_id, params):
+       # Load model, fit, save results
+       pass
+
+   @app.post("/api/v1/models/{model_id}/fit/async")
+   async def fit_model_async(model_id: str, params: FitParams):
+       # Start async task
+       task = fit_model_task.delay(model_id, params.dict())
+       return {"task_id": task.id}
+   ```
+
+### Database Scaling
+
+1. **Read Replicas**: For high-read loads, use PostgreSQL read replicas
+2. **Connection Pooling**: Implement PgBouncer for connection pooling
+3. **Partitioning**: For large result tables, implement table partitioning
+
+## Monitoring and Logging
+
+### Logging Configuration
+
+Set up structured logging:
+
+```python
+import logging
+import json
+from datetime import datetime
+
+class JSONFormatter(logging.Formatter):
+    def format(self, record):
+        log_record = {
+            "time": datetime.utcnow().isoformat(),
+            "level": record.levelname,
+            "message": record.getMessage(),
+            "module": record.module,
+            "function": record.funcName
+        }
+
+        if hasattr(record, 'request_id'):
+            log_record["request_id"] = record.request_id
+
+        if record.exc_info:
+            log_record["exception"] = self.formatException(record.exc_info)
+
+        return json.dumps(log_record)
+
+def setup_logging():
+    logger = logging.getLogger("mmm_api")
+    logger.setLevel(logging.INFO)
+
+    handler = logging.StreamHandler()
+    handler.setFormatter(JSONFormatter())
+    logger.addHandler(handler)
+
+    return logger
+```
+
+Use middleware for request logging:
+
+```python
+@app.middleware("http")
+async def log_requests(request, call_next):
+    request_id = str(uuid.uuid4())
+    logger = logging.getLogger("mmm_api")
+    logger.info(f"Request received: {request.method} {request.url.path}", extra={"request_id": request_id})
+
+    start_time = time.time()
+    response = await call_next(request)
+    process_time = time.time() - start_time
+
+    logger.info(
+        f"Request completed: {request.method} {request.url.path} - Status: {response.status_code} - Duration: {process_time:.3f}s",
+        extra={"request_id": request_id}
+    )
+
+    response.headers["X-Request-ID"] = request_id
+    return response
+```
+
+### Monitoring with Prometheus
+
+Add Prometheus metrics:
+
+1. Install dependencies:
+```bash
+pip install prometheus-client
+```
+
+2. Add metrics to your FastAPI app:
+```python
+from prometheus_client import Counter, Histogram, generate_latest
+from fastapi import Response
+
+# Define metrics
+REQUEST_COUNT = Counter(
+    'mmm_api_requests_total',
+    'Total number of requests',
+    ['method', 'endpoint', 'status']
+)
+
+REQUEST_LATENCY = Histogram(
+    'mmm_api_request_latency_seconds',
+    'Request latency in seconds',
+    ['method', 'endpoint']
+)
+
+MODEL_PROCESSING_TIME = Histogram(
+    'mmm_api_model_processing_seconds',
+    'Time spent processing models',
+    ['operation']
+)
+
+@app.get('/metrics')
+def metrics():
+    return Response(generate_latest(), media_type="text/plain")
+```
+
+3. Use the metrics in your request middleware and endpoints
+
+### Health Check Endpoints
+
+Implement comprehensive health checks:
+
+```python
+@app.get("/health")
+async def health_check():
+    """Basic health check."""
+    return {"status": "healthy"}
+
+@app.get("/health/detailed")
+async def detailed_health_check(db = Depends(get_db)):
+    """
+    Detailed health check that includes database connectivity
+    and other external dependencies.
+    """
+    health_status = {
+        "status": "healthy",
+        "timestamp": datetime.utcnow().isoformat(),
+        "version": "1.0.0",
+        "services": {}
+    }
+
+    # Check database
+    try:
+        cursor = db.cursor()
+        cursor.execute("SELECT 1")
+        cursor.close()
+        health_status["services"]["database"] = {"status": "healthy"}
+    except Exception as e:
+        health_status["status"] = "unhealthy"
+        health_status["services"]["database"] = {
+            "status": "unhealthy",
+            "error": str(e)
+        }
+
+    # Check other dependencies as needed
+
+    return health_status
+```
+
+## Security Considerations
+
+### API Security
+
+1. **API Key Authentication**:
+   ```python
+   from fastapi.security.api_key import APIKeyHeader, APIKey
+
+   API_KEY_NAME = "X-API-Key"
+   api_key_header = APIKeyHeader(name=API_KEY_NAME)
+
+   async def get_api_key(api_key: str = Security(api_key_header)):
+       if api_key == API_KEY:
+           return api_key
+       raise HTTPException(status_code=403, detail="Invalid API Key")
+   ```
+
+2. **JWT Authentication**:
+   ```python
+   from fastapi.security import OAuth2PasswordBearer
+   import jwt
+
+   oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+   async def get_current_user(token: str = Depends(oauth2_scheme)):
+       try:
+           payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+           return payload
+       except jwt.PyJWTError:
+           raise HTTPException(status_code=401, detail="Invalid token")
+   ```
+
+3. **Rate Limiting**:
+   ```python
+   from fastapi import FastAPI, Request, Response
+   import time
+   from starlette.middleware.base import BaseHTTPMiddleware
+
+   class RateLimitMiddleware(BaseHTTPMiddleware):
+       def __init__(self, app, limit=100, window=60):
+           super().__init__(app)
+           self.limit = limit
+           self.window = window
+           self.requests = {}
+
+       async def dispatch(self, request, call_next):
+           key = request.client.host
+
+           current_time = time.time()
+           if key not in self.requests:
+               self.requests[key] = []
+
+           # Clean old requests
+           self.requests[key] = [t for t in self.requests[key] if current_time - t < self.window]
+
+           # Check limit
+           if len(self.requests[key]) >= self.limit:
+               return Response(
+                   status_code=429,
+                   content={"detail": "Rate limit exceeded"}
+               )
+
+           # Add request
+           self.requests[key].append(current_time)
+
+           return await call_next(request)
+
+   app.add_middleware(RateLimitMiddleware)
+   ```
+
+### Data Security
+
+1. **Encryption**:
+   - Use HTTPS for all API traffic
+   - Encrypt sensitive data in the database
+
+2. **Input Validation**:
+   - Use Pydantic models for request validation
+   - Implement additional validation for numeric ranges and data formats
+
+3. **Output Sanitization**:
+   - Ensure no sensitive data is returned in responses
+   - Limit exposure of model internals
+
+## Continuous Integration/Deployment
+
+### CI/CD Pipeline with GitHub Actions
+
+Create a `.github/workflows/ci-cd.yml` file:
+
+```yaml
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r test-requirements.txt
+    - name: Lint with flake8
+      run: |
+        flake8 mmm/ tests/
+    - name: Test with pytest
+      run: |
+        pytest --cov=mmm tests/
+
+  build:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build Docker image
+      run: |
+        docker build -t mmm-service:${{ github.sha }} .
+    - name: Push to GitHub Container Registry
+      uses: docker/login-action@v1
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Push image
+      run: |
+        docker tag mmm-service:${{ github.sha }} ghcr.io/${{ github.repository }}/mmm-service:${{ github.sha }}
+        docker tag mmm-service:${{ github.sha }} ghcr.io/${{ github.repository }}/mmm-service:latest
+        docker push ghcr.io/${{ github.repository }}/mmm-service:${{ github.sha }}
+        docker push ghcr.io/${{ github.repository }}/mmm-service:latest
+
+  deploy:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Deploy to Production
+      uses: render-actions/deploy-to-render@v1
+      with:
+        service-id: ${{ secrets.RENDER_SERVICE_ID }}
+        api-key: ${{ secrets.RENDER_API_KEY }}
+```
+
+### Deployment to Kubernetes via ArgoCD
+
+1. Create a Helm chart for your application
+
+2. Set up ArgoCD with a Kubernetes cluster
+
+3. Create an ArgoCD Application manifest:
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mmm-service
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/your-username/marketing-mix-model.git
+    targetRevision: HEAD
+    path: helm-chart
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: mmm
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+```
+
+## Troubleshooting
+
+### Common Deployment Issues
+
+1. **Database Connection Issues**:
+   - Check the `DATABASE_URL` environment variable
+   - Ensure PostgreSQL is running and accessible
+   - Verify network policies and security groups
+   - Check for SSL requirements in connection string
+
+2. **Docker Container Fails to Start**:
+   - Check logs: `docker logs mmm-service`
+   - Verify all environment variables are set
+   - Ensure the Docker image was built correctly
+   - Check for permission issues with mounted volumes
+
+3. **API Performance Issues**:
+   - Monitor resource usage (CPU, memory)
+   - Check database query performance
+   - Identify slow endpoints with request timing logs
+   - Consider scaling up or out
+
+### Debugging in Production
+
+1. **Accessing Logs**:
+   - Kubernetes: `kubectl logs deployment/mmm-api -n mmm`
+   - Docker: `docker logs mmm-service`
+   - Cloud providers: Use their logging interfaces
+
+2. **Debugging Database Issues**:
+   - Check connections: `SELECT * FROM pg_stat_activity;`
+   - Monitor slow queries: `SELECT * FROM pg_stat_statements ORDER BY total_time DESC LIMIT 10;`
+   - Check disk usage: `SELECT pg_database_size('mmm_db');`
+
+3. **Monitoring API Endpoints**:
+   - Check Prometheus metrics
+   - Review API response times
+   - Analyze error rates
+
+### Recovery Procedures
+
+1. **Rolling Back Deployments**:
+   - Kubernetes: `kubectl rollout undo deployment/mmm-api -n mmm`
+   - Docker Compose: `docker-compose up -d --force-recreate mmm-api`
+   - Manual: Deploy previous known-good version
+
+2. **Database Recovery**:
+   - Restore from backup: `pg_restore -d mmm_db backup.dump`
+   - Point-in-time recovery if using PostgreSQL WAL
+
+3. **Scaling for Recovery**:
+   - Temporarily increase resources: `kubectl scale deployment mmm-api --replicas=5 -n mmm`
+   - Add database read replicas for offloading queries

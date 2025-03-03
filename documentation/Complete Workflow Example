@@ -1,0 +1,639 @@
+# Marketing Mix Model: Complete Workflow Example
+
+This notebook walks through a complete Marketing Mix Modeling workflow using the MMM framework, demonstrating how to:
+
+1. Load and prepare marketing data
+2. Apply transformations for carryover effects and diminishing returns
+3. Build and validate the model
+4. Calculate elasticities and ROI
+5. Optimize marketing budget allocation
+
+## 1. Setup and Data Loading
+
+Let's begin by importing the necessary modules and loading our marketing data.
+
+```python
+# Import core libraries
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+
+# Import MMM package
+from mmm.core import MarketingMixModel
+from mmm.preprocessing import check_stationarity, make_stationary
+from mmm.adstock import apply_adstock
+from mmm.utils import calculate_vif, create_train_test_split
+from mmm.optimization import optimize_budget
+
+# Set plotting style
+plt.style.use('seaborn-whitegrid')
+sns.set_style("whitegrid")
+plt.rcParams['figure.figsize'] = [12, 8]
+plt.rcParams['figure.dpi'] = 100
+
+# Load marketing data
+data_path = 'mmm_data.csv'
+df = pd.read_csv(data_path)
+
+# Display the first few rows
+print(f"Loaded data with {len(df)} rows and {len(df.columns)} columns")
+df.head()
+```
+
+Let's examine the data structure and basic statistics.
+
+```python
+# Check data types and missing values
+df.info()
+
+# Summary statistics
+df.describe()
+
+# Check for missing values
+print("Missing values per column:")
+print(df.isnull().sum())
+
+# If there's a date column, convert it and check the date range
+if 'date' in df.columns:
+    df['date'] = pd.to_datetime(df['date'])
+    print(f"\nDate range: {df['date'].min()} to {df['date'].max()}")
+    print(f"Total periods: {len(df)}")
+```
+
+## 2. Data Visualization and Exploration
+
+Before building the model, let's explore the data to understand patterns and relationships.
+
+```python
+# Identify media channels
+media_cols = [col for col in df.columns if '_Spend' in col]
+print(f"Media channels: {media_cols}")
+
+# Plot media spend over time
+if 'date' in df.columns:
+    plt.figure(figsize=(14, 8))
+    for col in media_cols:
+        plt.plot(df['date'], df[col], label=col)
+    plt.title('Media Spend Over Time')
+    plt.xlabel('Date')
+    plt.ylabel('Spend ($)')
+    plt.legend()
+    plt.show()
+
+# Plot sales over time
+if 'date' in df.columns and 'Sales' in df.columns:
+    plt.figure(figsize=(14, 6))
+    plt.plot(df['date'], df['Sales'], 'b-', linewidth=2)
+    plt.title('Sales Over Time')
+    plt.xlabel('Date')
+    plt.ylabel('Sales ($)')
+    plt.show()
+
+# Correlation matrix
+corr_matrix = df[media_cols + ['Sales']].corr()
+plt.figure(figsize=(10, 8))
+sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', vmin=-1, vmax=1, fmt='.2f')
+plt.title('Correlation Matrix')
+plt.show()
+
+# Distribution of media spend
+plt.figure(figsize=(14, 10))
+for i, col in enumerate(media_cols, 1):
+    plt.subplot(len(media_cols), 1, i)
+    sns.histplot(df[col], kde=True)
+    plt.title(f'Distribution of {col}')
+plt.tight_layout()
+plt.show()
+```
+
+## 3. Checking for Stationarity
+
+Before proceeding with modeling, we need to check if our target variable is stationary.
+
+```python
+# Check stationarity of the target variable
+if 'Sales' in df.columns:
+    is_stationary, adf_stat, p_value = check_stationarity(df['Sales'])
+
+    print(f"ADF Statistic: {adf_stat:.4f}")
+    print(f"p-value: {p_value:.4f}")
+
+    if is_stationary:
+        print("The target variable is stationary.")
+    else:
+        print("The target variable is not stationary. Consider transforming it.")
+
+        # Apply log transformation to make it stationary
+        transformed_df, log_target, transformation_info = make_stationary(
+            df, 'Sales', transformation_type='log'
+        )
+
+        # Check stationarity of transformed variable
+        is_stationary, adf_stat, p_value = check_stationarity(transformed_df[log_target])
+
+        print(f"\nAfter transformation:")
+        print(f"ADF Statistic: {adf_stat:.4f}")
+        print(f"p-value: {p_value:.4f}")
+
+        if is_stationary:
+            print(f"The transformed variable ({log_target}) is stationary.")
+            df = transformed_df
+            target_col = log_target
+        else:
+            print(f"The transformed variable is still not stationary.")
+            target_col = 'Sales'
+
+    # Plot original and transformed target if transformation was applied
+    if 'Sales_log' in df.columns:
+        plt.figure(figsize=(14, 10))
+        plt.subplot(2, 1, 1)
+        plt.plot(df['date'] if 'date' in df.columns else range(len(df)), df['Sales'])
+        plt.title('Original Sales')
+
+        plt.subplot(2, 1, 2)
+        plt.plot(df['date'] if 'date' in df.columns else range(len(df)), df['Sales_log'])
+        plt.title('Log-Transformed Sales')
+
+        plt.tight_layout()
+        plt.show()
+else:
+    target_col = 'Sales'  # Default
+```
+
+## 4. Initialize the MMM and Preprocess Data
+
+Now let's set up the MMM and preprocess our data.
+
+```python
+# Initialize the MMM
+mmm = MarketingMixModel()
+mmm.load_data_from_dataframe(df)
+
+# Define column groups
+media_cols = [col for col in df.columns if '_Spend' in col]
+control_cols = []  # Add control columns if available
+
+# Preprocess data
+mmm.preprocess_data(
+    target=target_col,
+    date_col='date' if 'date' in df.columns else None,
+    media_cols=media_cols,
+    control_cols=control_cols
+)
+
+print(f"Preprocessed data shape: {mmm.preprocessed_data.shape}")
+print(f"Features: {mmm.feature_names}")
+```
+
+## 5. Apply Adstock Transformations
+
+Next, we'll apply adstock transformations to model the carryover effects of media spend.
+
+```python
+# Define channel-specific adstock parameters
+decay_rates = {
+    'TV_Spend': 0.85,  # TV has longer decay
+    'Digital_Spend': 0.7,
+    'Search_Spend': 0.3,  # Search has shorter decay
+    'Social_Spend': 0.6
+}
+
+max_lags = {
+    'TV_Spend': 8,  # TV has longer lag
+    'Digital_Spend': 4,
+    'Search_Spend': 2,  # Search has shorter lag
+    'Social_Spend': 5
+}
+
+# Apply adstock transformations
+mmm.apply_adstock_to_all_media(
+    media_cols=media_cols,
+    decay_rates=decay_rates,
+    max_lags=max_lags
+)
+
+# Check the effect of adstock transformation for one channel
+if len(media_cols) > 0:
+    example_channel = media_cols[0]
+    example_adstocked = f"{example_channel}_adstocked"
+
+    if example_adstocked in mmm.preprocessed_data.columns:
+        plt.figure(figsize=(14, 6))
+        plt.plot(mmm.preprocessed_data[example_channel], label='Original')
+        plt.plot(mmm.preprocessed_data[example_adstocked], label='Adstocked')
+        plt.title(f'Effect of Adstock Transformation on {example_channel}')
+        plt.legend()
+        plt.show()
+```
+
+## 6. Apply Diminishing Returns Transformations
+
+Let's apply log transformations to capture diminishing returns.
+
+```python
+# Create log-transformed versions of the adstocked variables
+for col in [f"{mc}_adstocked" for mc in media_cols]:
+    if col in mmm.preprocessed_data.columns:
+        # Add small constant to avoid log(0)
+        mmm.preprocessed_data[f"{col}_log"] = np.log1p(mmm.preprocessed_data[col])
+
+        # Add to feature names, replacing the non-log version
+        if col in mmm.feature_names:
+            idx = mmm.feature_names.index(col)
+            mmm.feature_names[idx] = f"{col}_log"
+        else:
+            mmm.feature_names.append(f"{col}_log")
+
+# Update X with the new features
+mmm.X = mmm.preprocessed_data[mmm.feature_names]
+
+# Plot original vs log-transformed for one channel
+if len(media_cols) > 0:
+    example_channel = f"{media_cols[0]}_adstocked"
+    example_log = f"{example_channel}_log"
+
+    if example_log in mmm.preprocessed_data.columns:
+        plt.figure(figsize=(14, 6))
+        plt.subplot(1, 2, 1)
+        plt.scatter(mmm.preprocessed_data[example_channel],
+                   mmm.preprocessed_data[target_col])
+        plt.title(f'Original: {example_channel} vs {target_col}')
+        plt.xlabel(example_channel)
+        plt.ylabel(target_col)
+
+        plt.subplot(1, 2, 2)
+        plt.scatter(mmm.preprocessed_data[example_log],
+                   mmm.preprocessed_data[target_col])
+        plt.title(f'Log-Transformed: {example_log} vs {target_col}')
+        plt.xlabel(example_log)
+        plt.ylabel(target_col)
+
+        plt.tight_layout()
+        plt.show()
+```
+
+## 7. Check for Multicollinearity
+
+Before fitting the model, let's check for multicollinearity among our features.
+
+```python
+# Calculate VIF for each feature
+vif_data = calculate_vif(mmm.X)
+
+# Display VIF values
+print("Variance Inflation Factors:")
+print(vif_data.sort_values('VIF', ascending=False))
+
+# Identify high VIF features
+high_vif = vif_data[vif_data['VIF'] > 10]
+if not high_vif.empty:
+    print("\nHigh multicollinearity detected in features:")
+    print(high_vif)
+    print("\nConsider using PCA or other dimensionality reduction techniques for these features.")
+```
+
+## 8. Split Data for Validation
+
+Let's split our data into training and test sets for proper validation.
+
+```python
+# Split data into train and test sets (80/20)
+train_data, test_data = create_train_test_split(
+    mmm.preprocessed_data,
+    train_frac=0.8,
+    date_col='date' if 'date' in mmm.preprocessed_data.columns else None
+)
+
+# Update MMM with training data only
+mmm.preprocessed_data = train_data
+mmm.X = train_data[mmm.feature_names]
+mmm.y = train_data[target_col]
+
+print(f"Training data size: {len(train_data)}")
+print(f"Test data size: {len(test_data)}")
+```
+
+## 9. Fit the Model
+
+Now we're ready to fit the MMM model.
+
+```python
+# Add constant and fit the model
+results = mmm.fit_model()
+
+# Display model summary
+print(results.summary())
+
+# Check R-squared
+print(f"\nR-squared: {results.rsquared:.4f}")
+print(f"Adjusted R-squared: {results.rsquared_adj:.4f}")
+
+# Check coefficients
+print("\nCoefficients:")
+for feature, coef in results.params.items():
+    if feature != 'const':
+        print(f"{feature}: {coef:.6f}")
+```
+
+## 10. Validate the Model
+
+Let's validate our model using the test set.
+
+```python
+import statsmodels.api as sm
+from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_percentage_error
+
+# Prepare test data
+X_test = test_data[mmm.feature_names]
+X_test = sm.add_constant(X_test)  # Add constant
+y_test = test_data[target_col]
+
+# Make predictions
+predictions = results.predict(X_test)
+
+# Calculate metrics
+test_r2 = r2_score(y_test, predictions)
+test_rmse = np.sqrt(mean_squared_error(y_test, predictions))
+test_mape = mean_absolute_percentage_error(y_test, predictions) * 100
+
+print(f"Test R²: {test_r2:.4f}")
+print(f"Test RMSE: {test_rmse:.4f}")
+print(f"Test MAPE: {test_mape:.2f}%")
+
+# Plot actual vs predicted
+plt.figure(figsize=(14, 6))
+if 'date' in test_data.columns:
+    plt.plot(test_data['date'], y_test, 'b-', label='Actual')
+    plt.plot(test_data['date'], predictions, 'r--', label='Predicted')
+    plt.xlabel('Date')
+else:
+    plt.plot(y_test.index, y_test, 'b-', label='Actual')
+    plt.plot(predictions.index, predictions, 'r--', label='Predicted')
+    plt.xlabel('Index')
+
+plt.title(f'Test Set: Actual vs. Predicted (R² = {test_r2:.4f})')
+plt.ylabel(target_col)
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.show()
+
+# Plot residuals
+residuals = y_test - predictions
+plt.figure(figsize=(14, 6))
+plt.subplot(1, 2, 1)
+plt.scatter(predictions, residuals)
+plt.axhline(y=0, color='r', linestyle='-')
+plt.title('Residuals vs Predicted')
+plt.xlabel('Predicted Values')
+plt.ylabel('Residuals')
+
+plt.subplot(1, 2, 2)
+plt.hist(residuals, bins=20)
+plt.title('Residuals Distribution')
+plt.xlabel('Residual Value')
+plt.ylabel('Frequency')
+
+plt.tight_layout()
+plt.show()
+```
+
+## 11. Calculate Elasticities
+
+Let's calculate the elasticities to understand the effectiveness of each channel.
+
+```python
+# Calculate elasticities
+elasticities = mmm.calculate_elasticities()
+
+# Sort by absolute value
+sorted_elasticities = sorted(
+    elasticities.items(),
+    key=lambda x: abs(x[1]),
+    reverse=True
+)
+
+print("Media Channel Elasticities:")
+for channel, elasticity in sorted_elasticities:
+    print(f"{channel}: {elasticity:.4f}")
+
+# Create a bar chart of elasticities
+plt.figure(figsize=(12, 6))
+channels = [channel for channel, _ in sorted_elasticities]
+values = [elasticity for _, elasticity in sorted_elasticities]
+colors = ['green' if v > 0 else 'red' for v in values]
+
+plt.bar(channels, values, color=colors)
+plt.title('Media Channel Elasticities')
+plt.ylabel('Elasticity')
+plt.xticks(rotation=45, ha='right')
+plt.grid(axis='y', alpha=0.3)
+plt.tight_layout()
+plt.show()
+```
+
+## 12. Calculate ROI
+
+Next, let's calculate ROI for each channel.
+
+```python
+# Calculate ROI
+roi_metrics = mmm.calculate_roi()
+
+# Display ROI metrics
+print("\nROI Metrics by Channel:")
+for channel, metrics in roi_metrics.items():
+    print(f"\n{channel}:")
+    print(f"  Total Spend: ${metrics['total_spend']:,.2f}")
+    print(f"  Total Effect: ${metrics['total_effect']:,.2f}")
+    print(f"  ROI: {metrics['roi']:.2f}")
+    print(f"  ROAS: {metrics['roas']:.2f}")
+
+# Plot ROI comparison
+plt.figure(figsize=(12, 6))
+channels = list(roi_metrics.keys())
+roi_values = [metrics['roi'] for metrics in roi_metrics.values()]
+
+plt.bar(channels, roi_values)
+plt.title('Return on Investment by Channel')
+plt.ylabel('ROI')
+plt.xticks(rotation=45, ha='right')
+plt.grid(axis='y', alpha=0.3)
+plt.tight_layout()
+plt.show()
+```
+
+## 13. Plot Media Contributions
+
+Let's visualize how each channel contributes to the target variable.
+
+```python
+# Plot channel contributions
+mmm.plot_channel_contributions()
+```
+
+## 14. Budget Optimization
+
+Finally, let's optimize the marketing budget allocation.
+
+```python
+# Current budget allocation
+current_spend = {
+    channel: mmm.preprocessed_data[channel.replace('_adstocked_log', '')].mean()
+    for channel in elasticities.keys()
+}
+
+total_budget = sum(current_spend.values())
+
+print(f"Total Budget: ${total_budget:,.2f}")
+print("\nCurrent Allocation:")
+for channel, spend in current_spend.items():
+    original_channel = channel.replace('_adstocked_log', '')
+    print(f"{original_channel}: ${spend:,.2f} ({spend/total_budget*100:.1f}%)")
+
+# Simple budget optimization
+optimized_budget = mmm.optimize_budget(total_budget=total_budget)
+
+print("\nOptimized Allocation:")
+for channel, spend in optimized_budget.items():
+    original_channel = channel.replace('_adstocked_log', '')
+    change = ((spend / current_spend.get(channel, 1)) - 1) * 100
+    print(f"{original_channel}: ${spend:,.2f} ({spend/total_budget*100:.1f}%), Change: {change:+.1f}%")
+
+# Plot comparison
+plt.figure(figsize=(14, 8))
+channels = [ch.replace('_adstocked_log', '') for ch in current_spend.keys()]
+current_values = [current_spend[ch] for ch in current_spend.keys()]
+optimized_values = [optimized_budget.get(ch, 0) for ch in current_spend.keys()]
+
+x = np.arange(len(channels))
+width = 0.35
+
+plt.bar(x - width/2, current_values, width, label='Current')
+plt.bar(x + width/2, optimized_values, width, label='Optimized')
+
+plt.title('Budget Allocation Comparison')
+plt.ylabel('Spend ($)')
+plt.xticks(x, channels, rotation=45, ha='right')
+plt.legend()
+plt.grid(axis='y', alpha=0.3)
+plt.tight_layout()
+plt.show()
+
+# Calculate expected revenue impact
+current_impact = sum(elasticities[ch] * current_spend[ch] for ch in elasticities.keys() if ch in current_spend)
+optimized_impact = sum(elasticities[ch] * optimized_budget.get(ch, 0) for ch in elasticities.keys())
+
+expected_lift = ((optimized_impact / current_impact) - 1) * 100 if current_impact > 0 else 0
+
+print(f"\nExpected Revenue Lift: {expected_lift:.2f}%")
+```
+
+## 15. Advanced: Response Curves
+
+Let's create response curves to visualize diminishing returns for each channel.
+
+```python
+def plot_response_curves(model_results, elasticities, current_spend, min_pct=50, max_pct=200, points=50):
+    """Plot response curves for each channel."""
+    channels = list(elasticities.keys())
+
+    plt.figure(figsize=(15, 10))
+    n_cols = 2
+    n_rows = (len(channels) + 1) // n_cols
+
+    for i, channel in enumerate(channels):
+        ax = plt.subplot(n_rows, n_cols, i + 1)
+
+        # Current value
+        current = current_spend.get(channel, 1)
+
+        # Create spend range
+        spend_range = np.linspace(current * min_pct / 100, current * max_pct / 100, points)
+
+        # Calculate response using log model (assuming log-log model)
+        # Response = exp(beta * log(X))
+        if '_log' in channel:  # Log-transformed variable
+            beta = elasticities[channel]
+            response = [beta * np.log1p(spend) for spend in spend_range]
+
+            # Normalize to current level
+            current_response = beta * np.log1p(current)
+            response = [r / current_response for r in response]
+
+            # Mark current point
+            ax.scatter([current], [1.0], color='red', s=50, zorder=5)
+
+            # Plot marginal returns
+            marginal_returns = np.diff(response) / np.diff(spend_range / current)
+            ax.plot(spend_range[1:], marginal_returns, 'g--', label='Marginal Return', alpha=0.7)
+
+        else:  # Linear variable
+            beta = elasticities[channel] / current if current > 0 else 0
+            response = [beta * spend for spend in spend_range]
+
+            # Normalize to current level
+            current_response = beta * current
+            response = [r / current_response for r in response]
+
+            # Mark current point
+            ax.scatter([current], [1.0], color='red', s=50, zorder=5)
+
+        # Plot the main response curve
+        ax.plot(spend_range, response, 'b-', label='Response')
+
+        # Add reference line
+        ax.axhline(y=1.0, color='gray', linestyle='--', alpha=0.5)
+
+        # Labels
+        original_channel = channel.replace('_adstocked_log', '')
+        ax.set_title(f"{original_channel}\nElasticity: {elasticities[channel]:.4f}")
+        ax.set_xlabel('Spend ($)')
+        ax.set_ylabel('Relative Response')
+        ax.grid(True, alpha=0.3)
+        ax.legend()
+
+    plt.tight_layout()
+    plt.show()
+
+# Plot response curves
+plot_response_curves(results, elasticities, current_spend)
+```
+
+## 16. Conclusion and Next Steps
+
+In this notebook, we've demonstrated a complete Marketing Mix Modeling workflow:
+
+1. We loaded and explored marketing data
+2. We preprocessed the data and applied transformations for:
+   - Stationarity (log transformation)
+   - Carryover effects (adstock)
+   - Diminishing returns (log transformation)
+3. We built, validated, and interpreted an MMM
+4. We calculated elasticities and ROI by channel
+5. We optimized budget allocation for maximum return
+
+### Next Steps
+
+1. **Experiment with different model specifications**:
+   - Try different adstock parameters
+   - Explore other transformation types
+   - Add interaction terms between channels
+
+2. **Incorporate seasonality and trend**:
+   - Add time-based variables (month, quarter, etc.)
+   - Include holiday indicators
+   - Model long-term trends
+
+3. **Advanced optimization**:
+   - Add minimum/maximum spend constraints
+   - Explore hill-function optimization
+   - Simulate different budget scenarios
+
+4. **Model validation and interpretation**:
+   - Validate with holdout data
+   - Compare with business knowledge
+   - Interpret elasticities and response curves
+
+This framework enables data-driven marketing decisions by quantifying the effectiveness of each channel and providing actionable insights for budget allocation.

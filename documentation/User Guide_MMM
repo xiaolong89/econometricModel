@@ -1,0 +1,311 @@
+# Marketing Mix Model User Guide
+
+## Table of Contents
+1. [Introduction to Marketing Mix Models](#introduction-to-marketing-mix-models)
+2. [Model Capabilities](#model-capabilities)
+3. [Data Requirements](#data-requirements)
+4. [Workflow Overview](#workflow-overview)
+5. [Interpreting Results](#interpreting-results)
+   - [Understanding Elasticities](#understanding-elasticities)
+   - [Reading Response Curves](#reading-response-curves)
+   - [Interpreting Budget Recommendations](#interpreting-budget-recommendations)
+6. [Common Use Cases](#common-use-cases)
+7. [Limitations and Considerations](#limitations-and-considerations)
+8. [FAQs](#faqs)
+
+## Introduction to Marketing Mix Models
+
+### What is a Marketing Mix Model?
+
+A Marketing Mix Model (MMM) is a statistical analysis technique used to quantify the impact of various marketing activities on sales or other business outcomes. It helps marketers understand:
+
+- **Which marketing channels are most effective**
+- **How marketing investments contribute to revenue**
+- **The optimal allocation of marketing budgets**
+- **The diminishing returns of increased spend in each channel**
+
+MMMs have been used by large consumer brands for decades and remain one of the most reliable methods for measuring marketing effectiveness across both digital and traditional channels.
+
+### Key Concepts
+
+Before diving into the details, it's important to understand these key concepts:
+
+#### Elasticity
+The percentage change in sales resulting from a 1% change in marketing spend for a particular channel.
+
+#### Adstock (Carryover)
+The delayed effect of advertising that continues to impact sales over time after the initial exposure.
+
+#### Diminishing Returns
+The concept that each additional dollar spent on marketing yields progressively less impact as spend increases.
+
+#### Media Contribution
+The portion of sales that can be attributed to a specific marketing activity or channel.
+
+#### Return on Investment (ROI)
+The revenue generated relative to the cost of a marketing investment.
+
+## Model Capabilities
+
+Our Marketing Mix Model framework offers the following capabilities:
+
+### Measurement and Attribution
+- Quantify the impact of marketing channels on business outcomes
+- Separate marketing effects from baseline sales and other non-marketing factors
+- Attribute revenue to specific marketing activities
+
+### Optimization
+- Determine optimal budget allocation across channels
+- Identify optimal spending levels within channels
+- Set minimum and maximum spend constraints
+
+### Forecasting
+- Predict future performance based on planned marketing investments
+- Simulate "what-if" scenarios for different budget allocations
+- Estimate incremental revenue from increased marketing spend
+
+### Advanced Analysis
+- Account for diminishing returns through multiple model specifications
+- Model interaction effects between channels (synergies)
+- Capture seasonal effects and trends
+- Handle media carryover effects through adstock transformations
+
+## Data Requirements
+
+### Required Data
+
+To build an effective Marketing Mix Model, you need the following data at minimum:
+
+#### Marketing Data
+- **Media spend by channel**: Weekly or daily spend for each marketing channel
+- **Time period**: At least 52 weeks (1 year) of data, preferably 78-104 weeks (1.5-2 years)
+- **Channel breakdown**: Separate data for each marketing channel (TV, paid search, display, social, etc.)
+
+#### Business Outcomes
+- **Sales or revenue**: Weekly or daily sales/revenue data that aligns with the marketing data timeframe
+- **Units sold** (if applicable): Volume metrics to complement revenue data
+
+#### Control Variables
+- **Pricing data**: Changes in product price or price index
+- **Competitor actions**: Competitor price changes, promotions, etc.
+- **Seasonality indicators**: Holiday periods, seasonal demand patterns
+
+### Recommended Additional Data
+
+For more robust models, consider including:
+
+- **Media delivery metrics**: Impressions, GRPs, clicks, or other engagement metrics
+- **Economic indicators**: GDP, consumer confidence, unemployment rate, etc.
+- **Distribution metrics**: Distribution points, out-of-stock indicators, etc.
+- **Weather data**: For products with weather sensitivity
+- **Promotional calendar**: Timing and depth of promotions
+
+### Data Format
+
+Data should be structured in a time-series format with:
+- One row per time period (day, week, or month)
+- Columns for date, sales/revenue, and each marketing channel's spend
+- Additional columns for control variables
+
+Example:
+
+| date       | revenue | tv_spend | search_spend | social_spend | price_index | competitor_price_index |
+|------------|---------|----------|--------------|--------------|-------------|------------------------|
+| 2023-01-01 | 150000  | 20000    | 10000        | 5000         | 100         | 105                    |
+| 2023-01-08 | 165000  | 25000    | 12000        | 5500         | 100         | 105                    |
+| 2023-01-15 | 145000  | 15000    | 11000        | 6000         | 95          | 105                    |
+| ...        | ...     | ...      | ...          | ...          | ...         | ...                    |
+
+## Workflow Overview
+
+The typical workflow for using our Marketing Mix Model framework consists of the following steps:
+
+### 1. Data Preparation
+- Load data from CSV files or databases
+- Check for missing values and outliers
+- Format date columns correctly
+- Organize media spend by channel
+
+### 2. Preprocessing
+- Apply log transformations to handle skewed data
+- Check for stationarity in time series data
+- Apply adstock transformations to model carryover effects
+- Apply transformations to model diminishing returns
+
+### 3. Model Building
+- Select control variables
+- Choose model specification (linear, log-log, etc.)
+- Fit the model
+- Address multicollinearity issues if needed
+- Validate model fit and accuracy
+
+### 4. Analysis & Interpretation
+- Calculate elasticities for each channel
+- Generate response curves
+- Calculate ROI and ROAS metrics
+- Decompose sales into channel contributions
+
+### 5. Optimization
+- Define constraints (minimum spend, maximum spend)
+- Run budget allocation optimization
+- Generate optimized budget scenarios
+- Compare current vs. optimized allocations
+
+### 6. Reporting
+- Create visualizations of key insights
+- Generate summary reports
+- Document methodology and assumptions
+
+## Interpreting Results
+
+### Understanding Elasticities
+
+Elasticities are one of the most important outputs of a Marketing Mix Model. They tell you how sensitive your business outcome (usually sales or revenue) is to changes in marketing spend.
+
+**Definition**: An elasticity of 0.1 means that a 1% increase in spending for that channel will lead to a 0.1% increase in revenue.
+
+#### Interpreting Elasticity Values:
+
+| Elasticity Range | Interpretation                                                |
+|------------------|--------------------------------------------------------------|
+| 0.3 - 0.5+       | Very high effectiveness, typically seen in direct response    |
+| 0.1 - 0.3        | Strong effectiveness, common for many successful media        |
+| 0.05 - 0.1       | Moderate effectiveness                                        |
+| 0.01 - 0.05      | Low effectiveness, but still positive ROI                     |
+| < 0.01           | Minimal effectiveness, potentially negative ROI               |
+
+#### Example:
+If TV has an elasticity of 0.15 and your revenue is $10M:
+- A 10% increase in TV spend would yield approximately a 1.5% increase in revenue
+- This equates to $150,000 in incremental revenue
+
+### Reading Response Curves
+
+Response curves visualize how sales or revenue respond to different levels of marketing spend, showing diminishing returns.
+
+![Response Curve Example](https://example.com/response_curve.png)
+
+Key points to note in response curves:
+
+- **X-axis**: Represents spending levels, often shown as percentage change from current spend
+- **Y-axis**: Represents the predicted outcome (sales or revenue)
+- **Current point**: Usually marked on the curve to show current spending level
+- **Diminishing returns**: The curve flattens as spend increases, indicating diminishing effectiveness
+- **Saturation point**: Where additional spend yields minimal incremental return
+
+Use response curves to identify:
+- **Opportunity areas**: Steep portions of the curve where additional spend would be highly effective
+- **Overspending**: Flat portions of the curve where spend could be reduced
+- **Optimal spend level**: The point before severe diminishing returns set in
+
+### Interpreting Budget Recommendations
+
+The optimization module provides recommendations for reallocating your marketing budget to maximize revenue.
+
+Key outputs include:
+
+- **Optimized allocation**: Recommended spend by channel
+- **Spend changes**: Percentage increase or decrease versus current spending
+- **Expected lift**: Estimated revenue increase from implementing the recommendations
+- **ROI improvement**: Expected change in return on investment
+
+When evaluating budget recommendations:
+
+- Look for **significant shifts** in allocation as areas for focus
+- Consider **practical constraints** that may not be captured in the model
+- Use the expected lift to prioritize implementation of recommendations
+- Understand that recommendations are most reliable within 30-50% of current spend levels
+
+## Common Use Cases
+
+### Strategic Budget Planning
+Use the model to determine the optimal allocation of your annual or quarterly marketing budget across channels.
+
+**Example workflow:**
+1. Load historical data for the past 18 months
+2. Build and validate the MMM
+3. Calculate elasticities and ROI metrics
+4. Run budget optimization for the planned total budget
+5. Generate a report showing recommended allocation
+
+### Media Mix Optimization
+Refine your channel mix to maximize ROI while maintaining revenue targets.
+
+**Example workflow:**
+1. Analyze current performance using the MMM
+2. Identify channels with highest and lowest elasticities
+3. Run optimization with various budget scenarios
+4. Implement a test of the recommended mix in a controlled market
+
+### Incremental Revenue Forecasting
+Predict the expected revenue impact of marketing investments.
+
+**Example workflow:**
+1. Build and validate the MMM on historical data
+2. Create several spending scenarios
+3. Use the model to forecast expected revenue for each scenario
+4. Select the scenario that best balances growth targets and efficiency
+
+### Marketing Effectiveness Measurement
+Measure and report on marketing performance and ROI.
+
+**Example workflow:**
+1. Build the MMM including all relevant marketing and control variables
+2. Generate a decomposition of sales by channel
+3. Calculate ROI metrics for each channel
+4. Create a dashboard showing contribution and effectiveness metrics
+
+## Limitations and Considerations
+
+### Statistical Limitations
+- MMMs are correlational models, not causal
+- Results are most reliable within the range of historical data
+- Accuracy depends on data quality and completeness
+- Small or recent channels may not have sufficient data for reliable measurement
+
+### Implementation Considerations
+- **Data granularity**: Weekly data generally provides the best balance of signal and detail
+- **Lookback period**: Models perform best with 18+ months of historical data
+- **Channel definitions**: Properly grouping channels improves model stability
+- **Outlier periods**: Consider excluding or controlling for extreme outliers (e.g., COVID-19 lockdowns)
+
+### Complementary Approaches
+MMMs work best as part of a measurement ecosystem:
+- **Multi-touch attribution (MTA)**: For digital channel granularity and customer journey insights
+- **Incrementality testing**: For causal validation of specific channel impacts
+- **Customer lifetime value (CLV)**: For understanding long-term customer acquisition economics
+
+## FAQs
+
+### How often should we update our Marketing Mix Model?
+For most businesses, updating quarterly provides a good balance of timeliness and stability. High-velocity businesses or those with significant seasonality may benefit from more frequent updates.
+
+### How accurate are the model predictions?
+A good MMM typically achieves 70-90% accuracy (R-squared) in explaining historical revenue variations. Forecast accuracy depends on market stability and how closely future conditions match the modeling period.
+
+### Can the model measure brand vs. performance marketing?
+Yes, with appropriate data and model specification. Brand channels like TV can be included alongside performance channels like paid search to measure relative effectiveness.
+
+### What's the difference between a linear and log-log model?
+- **Linear model**: Assumes constant returns to scale (each additional dollar has the same impact)
+- **Log-log model**: Explicitly models diminishing returns (each additional dollar has less impact)
+
+The log-log model typically provides more realistic estimates, especially for mature channels with significant spend.
+
+### How does the model handle seasonality?
+Seasonality is captured through:
+- Inclusion of time-based variables (month, quarter indicators)
+- Specific holiday flags
+- Decomposition of time series data where appropriate
+
+### Can the model measure long-term effects?
+Basic MMMs primarily capture short to medium-term effects. Long-term effects can be incorporated through:
+- Extended adstock transformations
+- Inclusion of brand metrics as intermediary variables
+- Separate long-term multipliers based on academic research
+
+### What's the difference between elasticity and ROI?
+- **Elasticity**: Percentage change in outcome for a percentage change in input (unit-free measure of effectiveness)
+- **ROI**: Return on investment, calculated as incremental revenue divided by cost (shows efficiency)
+
+Both metrics are valuable and complementary for decision-making.

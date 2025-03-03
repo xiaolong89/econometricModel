@@ -1,0 +1,956 @@
+# Marketing Mix Model Developer Documentation
+
+## Table of Contents
+1. [Project Structure](#project-structure)
+2. [Code Organization](#code-organization)
+3. [Development Environment Setup](#development-environment-setup)
+4. [Implementation Details](#implementation-details)
+5. [Contribution Workflow](#contribution-workflow)
+6. [Testing Procedures](#testing-procedures)
+7. [Performance Optimization](#performance-optimization)
+8. [Debugging Techniques](#debugging-techniques)
+9. [Extending the Framework](#extending-the-framework)
+10. [Documentation Guidelines](#documentation-guidelines)
+11. [Release Process](#release-process)
+
+## Project Structure
+
+The Marketing Mix Model (MMM) project follows a modular structure with core functionality separated from examples and utilities:
+
+```
+marketing-mix-model/
+├── mmm/                      # Core package
+│   ├── __init__.py           # Package initialization
+│   ├── core.py               # Main MMM implementation
+│   ├── preprocessing.py      # Data preprocessing utilities
+│   ├── adstock.py            # Adstock transformation functions
+│   ├── modeling.py           # Advanced modeling approaches
+│   ├── optimization.py       # Budget optimization algorithms
+│   ├── utils.py              # Helper functions
+│   └── visualization.py      # Visualization tools
+├── examples/                 # Example implementations
+│   ├── basic_mmm.py          # Basic implementation
+│   ├── improved_mmm.py       # Enhanced implementation
+│   ├── optimized_mmm.py      # Optimization workflow
+│   ├── adstock_grid_search.py # Grid search for adstock parameters
+│   ├── channel_interactions.py # Analysis of interaction effects
+│   ├── seasonality.py        # Time-based effects
+│   ├── budget_optimization.py # Budget optimization
+│   ├── combined_mmm.py       # Combined approach
+│   └── run_mmm_workflow.py   # Complete workflow runner
+├── data/                     # Data directory
+│   └── mmm_data.csv          # Example dataset
+├── docs/                     # Documentation
+│   ├── README.md             # Project overview
+│   ├── user_guide.md         # User documentation
+│   ├── technical_doc.md      # Technical documentation
+│   └── developer_doc.md      # Developer documentation
+├── tests/                    # Unit tests
+│   ├── test_core.py          # Tests for core.py
+│   ├── test_preprocessing.py # Tests for preprocessing.py
+│   └── ...                   # Tests for other modules
+├── .gitignore                # Git ignore file
+├── requirements.txt          # Dependencies
+├── setup.py                  # Package setup script
+└── README.md                 # Project README
+```
+
+## Code Organization
+
+### Core Module Organization
+
+Each core module follows a consistent organization pattern:
+
+1. **Imports**: Standard libraries first, then third-party dependencies, then local imports
+2. **Constants**: Any module-level constants
+3. **Helper Functions**: Small utility functions used within the module
+4. **Main Functions/Classes**: The primary functionality of the module
+5. **Execution Block**: Code that runs if the module is executed directly
+
+Example:
+
+```python
+# Imports - standard library
+import logging
+from pathlib import Path
+
+# Imports - third-party dependencies
+import numpy as np
+import pandas as pd
+import statsmodels.api as sm
+
+# Imports - local modules
+from mmm.utils import calculate_vif
+
+# Constants
+DEFAULT_ADSTOCK_PARAMS = {
+    'tv_spend': {'decay_rate': 0.85, 'max_lag': 8},
+    'digital_display_spend': {'decay_rate': 0.7, 'max_lag': 4},
+    'search_spend': {'decay_rate': 0.3, 'max_lag': 2}
+}
+
+# Logger setup
+logger = logging.getLogger(__name__)
+
+# Helper functions
+def _validate_inputs(df, target_col):
+    """Validate input data and parameters."""
+    if target_col not in df.columns:
+        raise ValueError(f"Target column '{target_col}' not found in data")
+    return True
+
+# Main functions
+def calculate_elasticities(model, X, y, model_type='linear-linear'):
+    """Calculate elasticities based on model type."""
+    # Implementation...
+
+# Execution block
+if __name__ == "__main__":
+    # Example usage or tests
+    test_data = pd.read_csv("example_data.csv")
+    results = calculate_elasticities(model, X, y)
+    print(results)
+```
+
+### Dependency Management
+
+Dependencies are managed in `requirements.txt`:
+
+```
+# Core dependencies
+numpy>=1.20.0
+pandas>=1.3.0
+statsmodels>=0.13.0
+scikit-learn>=1.0.0
+scipy>=1.7.0
+matplotlib>=3.4.0
+seaborn>=0.11.0
+
+# Development dependencies (optional)
+pytest>=6.2.5
+pytest-cov>=2.12.1
+black>=21.9b0
+flake8>=3.9.2
+```
+
+## Development Environment Setup
+
+### Prerequisites
+
+- Python 3.8 or newer
+- pip (Python package manager)
+- Git for version control
+
+### Setting Up a Development Environment
+
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/marketing-mix-model.git
+cd marketing-mix-model
+```
+
+2. Create and activate a virtual environment:
+```bash
+# Using venv
+python -m venv mmm-env
+source mmm-env/bin/activate  # On Windows: mmm-env\Scripts\activate
+
+# Or using conda
+conda create -n mmm-env python=3.8
+conda activate mmm-env
+```
+
+3. Install dependencies:
+```bash
+pip install -r requirements.txt
+pip install -e .  # Install the package in development mode
+```
+
+4. Install development tools:
+```bash
+pip install pytest black flake8 pytest-cov
+```
+
+### IDE Configuration
+
+#### VS Code Settings
+
+Recommended settings for VS Code (`settings.json`):
+
+```json
+{
+    "python.linting.enabled": true,
+    "python.linting.flake8Enabled": true,
+    "python.formatting.provider": "black",
+    "python.formatting.blackArgs": ["--line-length", "100"],
+    "editor.formatOnSave": true,
+    "python.testing.pytestEnabled": true
+}
+```
+
+#### PyCharm Settings
+
+1. Set Black as the formatter (Settings → Tools → Black)
+2. Enable Flake8 linting (Settings → Editor → Inspections → Python → Flake8)
+3. Configure pytest as the test runner (Settings → Tools → Python Integrated Tools)
+
+## Implementation Details
+
+### Core Class: MarketingMixModel
+
+The central `MarketingMixModel` class manages the entire modeling process:
+
+```python
+class MarketingMixModel:
+    """
+    A comprehensive Marketing Mix Model (MMM) implementation.
+    """
+    def __init__(self, data_path=None):
+        """Initialize the MarketingMixModel."""
+        self.data_path = data_path
+        self.data = None
+        self.model = None
+        self.results = None
+        self.preprocessed_data = None
+        self.X = None
+        self.y = None
+        self.feature_names = None
+        self.target = None
+        self.adstock_transformations = {}
+        self.cv_results = {}
+        self.elasticities = {}
+        self.roi_metrics = {}
+```
+
+Key implementation details:
+
+1. **State Management**: The class maintains its state through instance variables that track the data, model, and transformation parameters.
+
+2. **Method Chaining**: Methods return `self` where possible to allow method chaining:
+   ```python
+   mmm.load_data_from_dataframe(data).preprocess_data(target='sales').apply_adstock_to_all_media().fit_model()
+   ```
+
+3. **Dependency Injection**: Many methods accept customization parameters to override defaults.
+
+4. **Exception Handling**: Methods include try-except blocks to handle errors gracefully:
+   ```python
+   try:
+       # Implementation
+       return result
+   except Exception as e:
+       logger.error(f"Error in method_name: {str(e)}")
+       raise
+   ```
+
+### Adstock Implementation
+
+The adstock transformation is a critical component with several implementations:
+
+1. **Simple Adstock** (most commonly used):
+   ```python
+   def apply_adstock(series, decay_rate=0.7, lag_weight=0.3, max_lag=4):
+       x = series.values
+       n = len(x)
+       y = np.zeros(n)
+       for t in range(n):
+           y[t] = x[t]  # Immediate effect
+           for lag in range(1, min(t + 1, max_lag + 1)):
+               # Add decayed effect from previous periods
+               y[t] += lag_weight * (decay_rate ** lag) * x[t - lag]
+       return y
+   ```
+
+2. **Normalized Geometric Adstock**:
+   ```python
+   def geometric_adstock(series, decay_rate=0.7, max_lag=10):
+       x = series.values
+       n = len(x)
+       adstocked = np.zeros(n)
+       weights = np.array([decay_rate ** i for i in range(max_lag + 1)])
+       weights = weights / weights.sum()  # Normalize
+
+       for i in range(n):
+           for j in range(min(i + 1, max_lag + 1)):
+               adstocked[i] += weights[j] * x[i - j] if i - j >= 0 else 0
+
+       return pd.Series(adstocked, index=series.index)
+   ```
+
+3. **Advanced Adstock Patterns** (Weibull, delayed peak):
+   ```python
+   def weibull_adstock(series, shape=2.0, scale=2.0, max_lag=10):
+       x = series.values
+       n = len(x)
+       adstocked = np.zeros(n)
+
+       lag_periods = np.arange(max_lag + 1)
+       weights = (shape / scale) * (lag_periods / scale) ** (shape - 1) * np.exp(-(lag_periods / scale) ** shape)
+       weights = weights / weights.sum()  # Normalize
+
+       for i in range(n):
+           for j in range(min(i + 1, max_lag + 1)):
+               adstocked[i] += weights[j] * x[i - j] if i - j >= 0 else 0
+
+       return pd.Series(adstocked, index=series.index)
+   ```
+
+### Budget Optimization
+
+The budget optimization module includes multiple approaches:
+
+1. **Simple Allocation**:
+   ```python
+   def simple_budget_allocation(elasticities, total_budget):
+       positive_elasticities = {k: v for k, v in elasticities.items() if v > 0}
+       total_elasticity = sum(positive_elasticities.values())
+       weights = {k: v / total_elasticity for k, v in positive_elasticities.items()}
+       allocation = {channel: weight * total_budget for channel, weight in weights.items()}
+       return allocation
+   ```
+
+2. **Constrained Optimization**:
+   ```python
+   def optimize_budget_with_constraints(elasticities, current_spend, total_budget, min_budget=None, max_budget=None):
+       # Set up objective function
+       def objective(x):
+           spend_dict = {channel: spend for channel, spend in zip(channels, x)}
+           response = sum(elasticities[channel] * spend for channel, spend in spend_dict.items() if elasticities[channel] > 0)
+           return -response  # Negative for minimization
+
+       # Set up constraints
+       constraints = [{'type': 'eq', 'fun': lambda x: total_budget - sum(x)}]
+
+       # Set up bounds
+       bounds = [(min_budget.get(channel, 0), max_budget.get(channel, total_budget)) for channel in channels]
+
+       # Run optimization
+       result = minimize(objective, initial_allocation, method='SLSQP', bounds=bounds, constraints=constraints)
+
+       return {channel: spend for channel, spend in zip(channels, result.x)}
+   ```
+
+## Contribution Workflow
+
+### Setting Up for Development
+
+1. Fork the repository on GitHub
+2. Clone your fork locally:
+   ```bash
+   git clone https://github.com/your-username/marketing-mix-model.git
+   cd marketing-mix-model
+   ```
+3. Add the original repository as an upstream remote:
+   ```bash
+   git remote add upstream https://github.com/original-username/marketing-mix-model.git
+   ```
+4. Create a feature branch:
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+
+### Development Process
+
+1. Make your changes in the feature branch
+2. Follow the code style guidelines (PEP 8)
+3. Add appropriate tests for your changes
+4. Run the test suite to ensure all tests pass:
+   ```bash
+   pytest
+   ```
+5. Format your code with Black:
+   ```bash
+   black .
+   ```
+6. Check code quality with Flake8:
+   ```bash
+   flake8 mmm/ tests/
+   ```
+
+### Submitting Changes
+
+1. Commit your changes with descriptive messages:
+   ```bash
+   git add .
+   git commit -m "Add feature X that does Y"
+   ```
+2. Push to your fork:
+   ```bash
+   git push origin feature/your-feature-name
+   ```
+3. Create a pull request against the `main` branch of the upstream repository
+4. Wait for code review and address any feedback
+
+### Code Review Process
+
+When reviewing a pull request, consider:
+
+1. **Functionality**: Does the code work as expected?
+2. **Tests**: Are there adequate tests?
+3. **Documentation**: Is the code well-documented?
+4. **Style**: Does the code follow the project's style guidelines?
+5. **Performance**: Are there any performance concerns?
+
+## Testing Procedures
+
+### Test Structure
+
+Tests are organized to mirror the package structure:
+
+```
+tests/
+├── test_core.py          # Tests for core.py
+├── test_preprocessing.py # Tests for preprocessing.py
+├── test_adstock.py       # Tests for adstock.py
+└── ...
+```
+
+### Writing Tests
+
+Each test file should follow this pattern:
+
+```python
+# tests/test_adstock.py
+import pytest
+import numpy as np
+import pandas as pd
+from mmm.adstock import apply_adstock, geometric_adstock
+
+class TestAdstock:
+    def setup_method(self):
+        """Set up test fixtures."""
+        # Create sample data
+        self.dates = pd.date_range('2023-01-01', periods=10, freq='W')
+        self.series = pd.Series([10, 0, 0, 0, 0, 0, 0, 0, 0, 0], index=self.dates)
+
+    def test_apply_adstock_single_impulse(self):
+        """Test adstock with a single impulse input."""
+        # Apply adstock
+        decay_rate = 0.5
+        lag_weight = 1.0
+        max_lag = 5
+        result = apply_adstock(self.series, decay_rate, lag_weight, max_lag)
+
+        # Expected result: [10, 5, 2.5, 1.25, 0.625, 0.3125, 0, 0, 0, 0]
+        expected = [10, 5, 2.5, 1.25, 0.625, 0.3125, 0, 0, 0, 0]
+
+        # Assert that the result matches the expected output
+        np.testing.assert_array_almost_equal(result, expected)
+
+    def test_geometric_adstock(self):
+        """Test geometric adstock transformation."""
+        result = geometric_adstock(self.series, decay_rate=0.5, max_lag=3)
+
+        # With normalization, weights should sum to 1
+        # weights = [1, 0.5, 0.25, 0.125] / 1.875
+        # So expected = [10*0.533, 0*0.533 + 10*0.267, ...]
+        expected = pd.Series([5.33, 2.67, 1.33, 0.67, 0, 0, 0, 0, 0, 0], index=self.dates)
+
+        # Allow for small floating point differences
+        pd.testing.assert_series_equal(result.round(2), expected.round(2))
+```
+
+### Running Tests
+
+Run the test suite with pytest:
+
+```bash
+# Run all tests
+pytest
+
+# Run tests for a specific module
+pytest tests/test_adstock.py
+
+# Run a specific test
+pytest tests/test_adstock.py::TestAdstock::test_apply_adstock_single_impulse
+
+# Run with coverage report
+pytest --cov=mmm tests/
+```
+
+### Test Coverage
+
+Aim for at least 80% test coverage for new code. Use pytest-cov to generate coverage reports:
+
+```bash
+pytest --cov=mmm --cov-report=html tests/
+```
+
+This creates an HTML report in `htmlcov/` that you can open in a browser to view coverage details.
+
+## Performance Optimization
+
+### Profiling
+
+Use Python's built-in profiling tools to identify bottlenecks:
+
+```python
+import cProfile
+import pstats
+
+# Profile the function
+def profile_function():
+    cProfile.run('your_function(args)', 'stats.prof')
+
+    # Print sorted stats
+    p = pstats.Stats('stats.prof')
+    p.strip_dirs().sort_stats('cumulative').print_stats(20)
+
+# Example usage
+profile_function()
+```
+
+### Common Optimizations
+
+1. **Vectorization**: Replace loops with numpy operations:
+   ```python
+   # Instead of:
+   result = []
+   for i in range(len(data)):
+       result.append(data[i] * 2)
+
+   # Use:
+   result = data * 2
+   ```
+
+2. **Pre-allocation**: Pre-allocate arrays instead of appending:
+   ```python
+   # Instead of:
+   result = []
+   for i in range(n):
+       result.append(calculate_value(i))
+
+   # Use:
+   result = np.zeros(n)
+   for i in range(n):
+       result[i] = calculate_value(i)
+   ```
+
+3. **Caching**: Cache expensive computations:
+   ```python
+   from functools import lru_cache
+
+   @lru_cache(maxsize=128)
+   def expensive_calculation(x, y):
+       # Expensive calculation
+       return result
+   ```
+
+4. **Optimized Libraries**: Use optimized libraries for numerical operations:
+   - Use numpy for array operations
+   - Use pandas for data manipulation
+   - Use scipy for optimization
+
+### Multiprocessing
+
+For computationally intensive operations, consider using parallelization:
+
+```python
+from concurrent.futures import ProcessPoolExecutor
+import multiprocessing as mp
+
+def parallel_operation(data, func, n_jobs=None):
+    if n_jobs is None:
+        n_jobs = mp.cpu_count() - 1
+
+    with ProcessPoolExecutor(max_workers=n_jobs) as executor:
+        results = list(executor.map(func, data))
+
+    return results
+```
+
+## Debugging Techniques
+
+### Logging
+
+The project uses Python's logging module. Set up logging in each module:
+
+```python
+import logging
+
+logger = logging.getLogger(__name__)
+
+def some_function(args):
+    logger.debug("Function called with args: %s", args)
+    try:
+        # Function implementation
+        result = calculate_result(args)
+        logger.info("Function completed successfully with result: %s", result)
+        return result
+    except Exception as e:
+        logger.error("Error in function: %s", str(e), exc_info=True)
+        raise
+```
+
+Configure logging in the main application or during testing:
+
+```python
+import logging
+
+# Basic config
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+# More advanced config
+handler = logging.FileHandler('mmm.log')
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+
+logger = logging.getLogger('mmm')
+logger.setLevel(logging.DEBUG)
+logger.addHandler(handler)
+```
+
+### Interactive Debugging
+
+Use Python's built-in debugger or an IDE debugger:
+
+```python
+import pdb
+
+def problematic_function():
+    x = calculate_something()
+    pdb.set_trace()  # Debugging breakpoint
+    y = process_further(x)
+    return y
+```
+
+In the debugger, you can:
+- Inspect variables: `print(x)`, `dir(obj)`, `obj.__dict__`
+- Execute code: `next_value = calculate_next(x)`
+- Continue execution: `c`
+- Step into a function: `s`
+- Next line: `n`
+
+### Common Issues and Solutions
+
+1. **Multicollinearity Issues**:
+   - Symptoms: Unstable coefficients, high VIF values, counterintuitive signs
+   - Debugging: Print VIF for each feature
+   - Solutions:
+     - Use PCA for dimensionality reduction
+     - Group highly correlated features
+     - Apply Ridge regression
+
+2. **Adstock Parameter Sensitivity**:
+   - Symptoms: Model results change dramatically with small parameter changes
+   - Debugging: Grid search different parameter values and plot results
+   - Solutions:
+     - Use grid search to find optimal parameters
+     - Cross-validate with different parameter sets
+     - Consider simpler adstock formulations
+
+3. **Overfitting**:
+   - Symptoms: High training R² but poor test performance
+   - Debugging: Compare train/test metrics, check coefficient magnitudes
+   - Solutions:
+     - Reduce feature set
+     - Use regularization (Ridge, Lasso)
+     - Increase training data
+
+4. **Data Quality Issues**:
+   - Symptoms: Unexplained errors, poor model performance
+   - Debugging: Explore data distributions, check for missing values
+   - Solutions:
+     - Add data validation steps
+     - Handle outliers appropriately
+     - Improve missing value imputation
+
+## Extending the Framework
+
+### Adding New Transformation Types
+
+To add a new transformation type (e.g., a new adstock pattern):
+
+1. Add the function to the appropriate module:
+```python
+def new_adstock_pattern(series, param1=default1, param2=default2):
+    """
+    Apply a new adstock pattern transformation.
+
+    Args:
+        series: Input time series
+        param1: First parameter
+        param2: Second parameter
+
+    Returns:
+        Transformed time series
+    """
+    # Implementation
+    return transformed_series
+```
+
+2. Update the `apply_adstock_to_all_media` method to support the new pattern:
+```python
+def apply_adstock_to_all_media(self, media_cols=None, decay_rates=None, pattern_type='geometric'):
+    # ...existing code...
+
+    if pattern_type == 'geometric':
+        transformed = geometric_adstock(series, decay_rate, max_lag)
+    elif pattern_type == 'weibull':
+        transformed = weibull_adstock(series, shape, scale, max_lag)
+    elif pattern_type == 'new_pattern':
+        transformed = new_adstock_pattern(series, param1, param2)
+    else:
+        raise ValueError(f"Unknown pattern type: {pattern_type}")
+
+    # ...existing code...
+```
+
+3. Add tests for the new function:
+```python
+def test_new_adstock_pattern(self):
+    """Test the new adstock pattern transformation."""
+    result = new_adstock_pattern(self.series, param1=value1, param2=value2)
+    expected = calculate_expected_result()
+    pd.testing.assert_series_equal(result, expected)
+```
+
+### Adding New Model Specifications
+
+To add a new model specification (e.g., a new regression approach):
+
+1. Add the model fitting function to `modeling.py`:
+```python
+def fit_new_model(X, y, param1=default1, param2=default2):
+    """
+    Fit a new model type.
+
+    Args:
+        X: Feature matrix
+        y: Target variable
+        param1: First parameter
+        param2: Second parameter
+
+    Returns:
+        Fitted model and metrics
+    """
+    # Preprocessing
+    # Model fitting
+    # Metrics calculation
+    return model, metrics
+```
+
+2. Integrate with the core class:
+```python
+def fit_model_with_new_approach(self, param1=default1, param2=default2):
+    """Fit model using the new approach."""
+    if self.X is None or self.y is None:
+        raise ValueError("X and y not set. Call preprocess_data() first.")
+
+    model, metrics = fit_new_model(self.X, self.y, param1, param2)
+    self.model = model
+    self.results = metrics
+
+    return self.results
+```
+
+3. Add tests for the new model:
+```python
+def test_fit_new_model(self):
+    """Test the new model fitting function."""
+    X = pd.DataFrame(np.random.randn(100, 5))
+    y = np.random.randn(100)
+    model, metrics = fit_new_model(X, y)
+    assert model is not None
+    assert 'r_squared' in metrics
+```
+
+### Custom Optimization Strategies
+
+To implement a custom budget optimization strategy:
+
+1. Add the optimization function to `optimization.py`:
+```python
+def custom_budget_optimization(elasticities, current_spend, total_budget, custom_param):
+    """
+    Custom budget optimization strategy.
+
+    Args:
+        elasticities: Dictionary of channel elasticities
+        current_spend: Dictionary of current spend by channel
+        total_budget: Total budget to allocate
+        custom_param: Custom parameter
+
+    Returns:
+        Dictionary of optimized budget allocation
+    """
+    # Optimization logic
+    return optimized_allocation
+```
+
+2. Integrate with the core class:
+```python
+def optimize_budget_with_custom_strategy(self, total_budget=None, custom_param=default_value):
+    """Optimize budget using custom strategy."""
+    if not self.elasticities:
+        self.calculate_elasticities()
+
+    if total_budget is None:
+        total_budget = sum(self.current_spend.values())
+
+    optimized_allocation = custom_budget_optimization(
+        self.elasticities,
+        self.current_spend,
+        total_budget,
+        custom_param
+    )
+
+    return optimized_allocation
+```
+
+### Implementing New Visualization Types
+
+To add a new visualization:
+
+1. Add the visualization function to `visualization.py`:
+```python
+def plot_new_visualization(data, param1=default1, param2=default2):
+    """
+    Create a new type of visualization.
+
+    Args:
+        data: Data to visualize
+        param1: First parameter
+        param2: Second parameter
+
+    Returns:
+        matplotlib figure
+    """
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    # Visualization logic
+
+    return fig
+```
+
+2. Integrate with the core class:
+```python
+def plot_new_visualization(self, param1=default1, param2=default2):
+    """Create the new visualization."""
+    if self.results is None:
+        raise ValueError("Model not fitted. Call fit_model() first.")
+
+    return plot_new_visualization(
+        self.preprocessed_data,
+        param1,
+        param2
+    )
+```
+
+## Documentation Guidelines
+
+### Docstring Format
+
+The project uses the Google docstring format:
+
+```python
+def function_name(param1, param2=None):
+    """Short description of the function.
+
+    Longer description if needed. This can span multiple lines and
+    provide more detailed explanations.
+
+    Args:
+        param1: Description of param1
+        param2: Description of param2. Defaults to None.
+
+    Returns:
+        Description of the return value(s)
+
+    Raises:
+        ValueError: If param1 is negative
+
+    Examples:
+        >>> function_name(5)
+        10
+        >>> function_name(5, param2='value')
+        15
+    """
+```
+
+### Code Comments
+
+Use comments to explain complex logic:
+
+```python
+# Calculate weights for adstock transformation
+# We use a normalized geometric decay pattern
+weights = np.array([decay_rate ** i for i in range(max_lag + 1)])
+weights = weights / weights.sum()  # Normalize to sum to 1
+```
+
+### Inline Documentation
+
+Add inline type hints using Python's type annotations:
+
+```python
+def calculate_elasticities(
+    model: sm.regression.linear_model.RegressionResultsWrapper,
+    X: pd.DataFrame,
+    y: pd.Series,
+    model_type: str = 'linear-linear'
+) -> Dict[str, float]:
+    """Calculate elasticities based on model coefficients."""
+```
+
+## Release Process
+
+### Version Numbering
+
+The project follows semantic versioning (MAJOR.MINOR.PATCH):
+
+- MAJOR: Incompatible API changes
+- MINOR: Add functionality in a backward-compatible manner
+- PATCH: Backward-compatible bug fixes
+
+### Release Checklist
+
+Before releasing a new version:
+
+1. **Update Documentation**: Ensure all new features are documented
+2. **Run Tests**: Verify all tests pass (`pytest`)
+3. **Check Coverage**: Ensure adequate test coverage (`pytest --cov=mmm`)
+4. **Update Version**: Update version in `setup.py` and `__init__.py`
+5. **Update Changelog**: Document changes in `CHANGELOG.md`
+6. **Create Tag**: Tag the release in Git (`git tag v1.0.0`)
+
+### Creating a Release
+
+1. Push the tag to GitHub:
+   ```bash
+   git push origin v1.0.0
+   ```
+
+2. Create a GitHub release with release notes
+
+3. Build the distribution packages:
+   ```bash
+   python setup.py sdist bdist_wheel
+   ```
+
+4. Upload to PyPI:
+   ```bash
+   twine upload dist/*
+   ```
+
+### Hotfix Process
+
+For critical bug fixes:
+
+1. Create a hotfix branch from the tag:
+   ```bash
+   git checkout -b hotfix/v1.0.1 v1.0.0
+   ```
+
+2. Fix the bug and update version to `1.0.1`
+
+3. Merge back to main branch:
+   ```bash
+   git checkout main
+   git merge hotfix/v1.0.1
+   ```
+
+4. Create a new tag and release following the standard process
