@@ -161,7 +161,7 @@ def run_complete_mmm_workflow(data_path):
 # Execute the complete workflow
 if __name__ == "__main__":
     try:
-        results = run_complete_mmm_workflow('C:\_econometricModel\data\mmm_data.csv')
+        results = run_complete_mmm_workflow('/data/mmm_data.csv')
         print("\nMMM workflow completed successfully!")
 
         # Save a visualization of the model fit

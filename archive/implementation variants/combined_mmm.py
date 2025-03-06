@@ -17,7 +17,7 @@ from statsmodels.stats.outliers_influence import variance_inflation_factor
 # Then add a main execution block:
 if __name__ == "__main__":
     # Path to your data file
-    data_path = 'mmm_data.csv'
+    data_path = '/data/mmm_data.csv'
 
     # Load data
     data = pd.read_csv(data_path)

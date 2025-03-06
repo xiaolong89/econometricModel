@@ -424,7 +424,7 @@ if __name__ == "__main__":
     print(f"Mock data saved to {csv_path}")
 
     # Create SQL dump
-    sql_path = '../examples/marketing_data.sql'
+    sql_path = '../data/marketing_data.sql'
     create_sql_dump(mock_data, file_path=sql_path)
     print(f"SQL dump saved to {sql_path}")
 
