@@ -1,4 +1,747 @@
 {
+  "project": {
+    "name": "Marketing Mix Model MVP",
+    "description": "Development and deployment of a Marketing Mix Model MVP with Bubble UI integration",
+    "current_status": "basic_mmm.py functional, initial testing complete, file structure reorganized",
+    "target_completion": "6-7 weeks from start"
+  },
+  "phases": [
+    {
+      "phase_id": 1,
+      "name": "API Development",
+      "status": "Not Started",
+      "description": "Create the backend API that will connect the MMM model to the Bubble UI",
+      "estimated_duration": "1-2 weeks",
+      "tasks": [
+        {
+          "task_id": "1.1",
+          "name": "API Design",
+          "description": "Define API endpoints, request/response formats, and error handling strategy",
+          "assignee_role": "Developer",
+          "status": "Not Started",
+          "estimated_hours": 8,
+          "deliverables": [
+            "API specification document",
+            "Endpoint definitions",
+            "Data contract documentation"
+          ],
+          "detailed_steps": [
+            "Define input data requirements (CSV format, required columns)",
+            "Specify output data structure for model results",
+            "Document error codes and messages",
+            "Create schema validation rules for input data"
+          ],
+          "dependencies": []
+        },
+        {
+          "task_id": "1.2",
+          "name": "Model Wrapper Creation",
+          "description": "Create a wrapper around basic_mmm.py to expose functionality through API",
+          "assignee_role": "Developer",
+          "status": "Not Started",
+          "estimated_hours": 12,
+          "deliverables": [
+            "model_wrapper.py file",
+            "Function documentation"
+          ],
+          "detailed_steps": [
+            "Import functionality from basic_mmm.py",
+            "Create simplified interface functions",
+            "Add proper error handling",
+            "Implement input validation",
+            "Create helper functions for data preprocessing"
+          ],
+          "dependencies": ["1.1"]
+        },
+        {
+          "task_id": "1.3",
+          "name": "Flask API Implementation",
+          "description": "Implement REST API using Flask",
+          "assignee_role": "Developer",
+          "status": "Not Started",
+          "estimated_hours": 16,
+          "deliverables": [
+            "app.py with Flask implementation",
+            "requirements.txt for dependencies",
+            "API documentation"
+          ],
+          "detailed_steps": [
+            "Set up Flask application structure",
+            "Create endpoints for file upload",
+            "Implement model execution logic",
+            "Add error handling middleware",
+            "Implement basic authentication",
+            "Set up CORS handling",
+            "Create response formatting functions"
+          ],
+          "dependencies": ["1.2"]
+        },
+        {
+          "task_id": "1.4",
+          "name": "API Testing",
+          "description": "Test API endpoints using Postman or similar tools",
+          "assignee_role": "QA",
+          "status": "Not Started",
+          "estimated_hours": 8,
+          "deliverables": [
+            "Test cases document",
+            "Postman collection",
+            "Test results summary"
+          ],
+          "detailed_steps": [
+            "Create test cases for happy path",
+            "Create test cases for error handling",
+            "Test with various CSV formats",
+            "Test performance with different file sizes",
+            "Document any issues or limitations"
+          ],
+          "dependencies": ["1.3"]
+        },
+        {
+          "task_id": "1.5",
+          "name": "API Documentation",
+          "description": "Create comprehensive API documentation",
+          "assignee_role": "Developer",
+          "status": "Not Started",
+          "estimated_hours": 6,
+          "deliverables": [
+            "API documentation",
+            "Sample request/response examples",
+            "Integration guide for Bubble"
+          ],
+          "detailed_steps": [
+            "Document API endpoints",
+            "Create sample requests and responses",
+            "Document authentication requirements",
+            "Create troubleshooting guide",
+            "Document limitations and constraints"
+          ],
+          "dependencies": ["1.3"]
+        }
+      ]
+    },
+    {
+      "phase_id": 2,
+      "name": "Deployment Setup",
+      "status": "Not Started",
+      "description": "Prepare and deploy the API to a hosting environment",
+      "estimated_duration": "3-5 days",
+      "tasks": [
+        {
+          "task_id": "2.1",
+          "name": "GitHub Repository Setup",
+          "description": "Set up GitHub repository for the project",
+          "assignee_role": "Developer",
+          "status": "Not Started",
+          "estimated_hours": 2,
+          "deliverables": [
+            "GitHub repository",
+            "README.md with setup instructions",
+            "Initial code commit"
+          ],
+          "detailed_steps": [
+            "Create new GitHub repository",
+            "Set up repository structure",
+            "Create README.md with project overview",
+            "Add .gitignore file",
+            "Make initial code commit"
+          ],
+          "dependencies": []
+        },
+        {
+          "task_id": "2.2",
+          "name": "Render.com Account Setup",
+          "description": "Set up Render.com account and connect to GitHub",
+          "assignee_role": "Developer",
+          "status": "Not Started",
+          "estimated_hours": 2,
+          "deliverables": [
+            "Render.com account",
+            "GitHub connection"
+          ],
+          "detailed_steps": [
+            "Create Render.com account",
+            "Connect GitHub repository",
+            "Set up team access if needed"
+          ],
+          "dependencies": ["2.1"]
+        },
+        {
+          "task_id": "2.3",
+          "name": "API Deployment Configuration",
+          "description": "Configure deployment settings for the API",
+          "assignee_role": "Developer",
+          "status": "Not Started",
+          "estimated_hours": 4,
+          "deliverables": [
+            "Deployment configuration",
+            "Environment variables setup",
+            "Deployment documentation"
+          ],
+          "detailed_steps": [
+            "Create Render.com Web Service",
+            "Configure environment variables",
+            "Set up build command",
+            "Configure start command",
+            "Set up health check endpoint",
+            "Document deployment process"
+          ],
+          "dependencies": ["1.3", "2.2"]
+        },
+        {
+          "task_id": "2.4",
+          "name": "Initial Deployment",
+          "description": "Deploy API to Render.com",
+          "assignee_role": "Developer",
+          "status": "Not Started",
+          "estimated_hours": 2,
+          "deliverables": [
+            "Deployed API",
+            "API URL",
+            "Deployment verification"
+          ],
+          "detailed_steps": [
+            "Trigger initial deployment",
+            "Monitor deployment process",
+            "Verify API is accessible",
+            "Test basic functionality",
+            "Document any deployment issues"
+          ],
+          "dependencies": ["2.3"]
+        },
+        {
+          "task_id": "2.5",
+          "name": "Deployment Testing",
+          "description": "Test the deployed API",
+          "assignee_role": "QA",
+          "status": "Not Started",
+          "estimated_hours": 4,
+          "deliverables": [
+            "Test results",
+            "Deployment validation"
+          ],
+          "detailed_steps": [
+            "Run API tests against deployed endpoint",
+            "Verify authentication works",
+            "Test file upload functionality",
+            "Verify model execution",
+            "Document any issues"
+          ],
+          "dependencies": ["2.4"]
+        }
+      ]
+    },
+    {
+      "phase_id": 3,
+      "name": "Bubble UI Development",
+      "status": "Not Started",
+      "description": "Develop the Bubble UI for interacting with the MMM API",
+      "estimated_duration": "2-3 weeks",
+      "tasks": [
+        {
+          "task_id": "3.1",
+          "name": "Bubble Account Setup",
+          "description": "Set up Bubble.io account and initial application",
+          "assignee_role": "Developer",
+          "status": "Not Started",
+          "estimated_hours": 2,
+          "deliverables": [
+            "Bubble.io account",
+            "Initial application setup"
+          ],
+          "detailed_steps": [
+            "Create Bubble.io account",
+            "Create new application",
+            "Set up basic application settings",
+            "Configure privacy settings"
+          ],
+          "dependencies": []
+        },
+        {
+          "task_id": "3.2",
+          "name": "API Connector Configuration",
+          "description": "Set up API Connector in Bubble",
+          "assignee_role": "Developer",
+          "status": "Not Started",
+          "estimated_hours": 4,
+          "deliverables": [
+            "API Connector configuration",
+            "API authentication setup",
+            "Test connection verification"
+          ],
+          "detailed_steps": [
+            "Create new API Connector",
+            "Configure base URL",
+            "Set up authentication",
+            "Create call for file upload",
+            "Test connection to API",
+            "Document any integration issues"
+          ],
+          "dependencies": ["2.4", "3.1"]
+        },
+        {
+          "task_id": "3.3",
+          "name": "Data Model Design",
+          "description": "Design Bubble data model for storing MMM results",
+          "assignee_role": "Product Manager",
+          "status": "Not Started",
+          "estimated_hours": 4,
+          "deliverables": [
+            "Data model documentation",
+            "Bubble database configuration"
+          ],
+          "detailed_steps": [
+            "Define data types for storing results",
+            "Create data model for users (if needed)",
+            "Create data model for uploads",
+            "Create data model for model results",
+            "Configure data privacy and sharing"
+          ],
+          "dependencies": ["3.1"]
+        },
+        {
+          "task_id": "3.4",
+          "name": "Upload Interface Development",
+          "description": "Develop the file upload and configuration interface",
+          "assignee_role": "Developer",
+          "status": "Not Started",
+          "estimated_hours": 8,
+          "deliverables": [
+            "File upload interface",
+            "Configuration options",
+            "Form validation"
+          ],
+          "detailed_steps": [
+            "Create file upload component",
+            "Add validation for file types",
+            "Create model configuration options",
+            "Add input validation",
+            "Implement progress indication",
+            "Create help text and instructions"
+          ],
+          "dependencies": ["3.2", "3.3"]
+        },
+        {
+          "task_id": "3.5",
+          "name": "Results Dashboard Development",
+          "description": "Develop the dashboard for displaying MMM results",
+          "assignee_role": "Developer",
+          "status": "Not Started",
+          "estimated_hours": 16,
+          "deliverables": [
+            "Results dashboard",
+            "Visualization components",
+            "Export functionality"
+          ],
+          "detailed_steps": [
+            "Create layout for results dashboard",
+            "Implement charts for elasticities",
+            "Implement model performance metrics display",
+            "Create comparative visualization components",
+            "Add export functionality",
+            "Implement data filtering options",
+            "Create print-friendly views"
+          ],
+          "dependencies": ["3.4"]
+        },
+        {
+          "task_id": "3.6",
+          "name": "Workflow Implementation",
+          "description": "Implement workflows for the application",
+          "assignee_role": "Developer",
+          "status": "Not Started",
+          "estimated_hours": 12,
+          "deliverables": [
+            "Upload workflow",
+            "Processing workflow",
+            "Results display workflow"
+          ],
+          "detailed_steps": [
+            "Create workflow for file upload",
+            "Implement API call workflow",
+            "Create error handling workflows",
+            "Implement data processing workflows",
+            "Create navigation workflows",
+            "Implement user feedback mechanisms"
+          ],
+          "dependencies": ["3.4", "3.5"]
+        },
+        {
+          "task_id": "3.7",
+          "name": "UI Testing",
+          "description": "Test the Bubble UI",
+          "assignee_role": "QA",
+          "status": "Not Started",
+          "estimated_hours": 8,
+          "deliverables": [
+            "Test cases",
+            "Test results",
+            "Bug report"
+          ],
+          "detailed_steps": [
+            "Test file upload functionality",
+            "Test API integration",
+            "Verify data visualization",
+            "Test user workflows",
+            "Verify responsive design",
+            "Test error handling",
+            "Create bug reports for any issues"
+          ],
+          "dependencies": ["3.6"]
+        }
+      ]
+    },
+    {
+      "phase_id": 4,
+      "name": "Integration and Testing",
+      "status": "Not Started",
+      "description": "Integrate and test the full system",
+      "estimated_duration": "1 week",
+      "tasks": [
+        {
+          "task_id": "4.1",
+          "name": "End-to-End Testing",
+          "description": "Test the complete workflow from upload to results",
+          "assignee_role": "QA",
+          "status": "Not Started",
+          "estimated_hours": 8,
+          "deliverables": [
+            "End-to-end test cases",
+            "Test results",
+            "Issue documentation"
+          ],
+          "detailed_steps": [
+            "Create test datasets of various sizes",
+            "Test complete workflow from upload to visualization",
+            "Verify data integrity throughout process",
+            "Test with different browsers",
+            "Test with different device types",
+            "Document any integration issues"
+          ],
+          "dependencies": ["2.5", "3.7"]
+        },
+        {
+          "task_id": "4.2",
+          "name": "Performance Testing",
+          "description": "Test system performance with various data sizes",
+          "assignee_role": "QA",
+          "status": "Not Started",
+          "estimated_hours": 6,
+          "deliverables": [
+            "Performance test results",
+            "Performance optimization recommendations"
+          ],
+          "detailed_steps": [
+            "Create test datasets of increasing size",
+            "Measure upload time",
+            "Measure processing time",
+            "Measure response time",
+            "Identify performance bottlenecks",
+            "Document performance limitations"
+          ],
+          "dependencies": ["4.1"]
+        },
+        {
+          "task_id": "4.3",
+          "name": "Bug Fixing",
+          "description": "Fix issues identified during testing",
+          "assignee_role": "Developer",
+          "status": "Not Started",
+          "estimated_hours": 16,
+          "deliverables": [
+            "Fixed issues",
+            "Updated code",
+            "Regression test results"
+          ],
+          "detailed_steps": [
+            "Prioritize identified issues",
+            "Fix critical bugs",
+            "Address performance issues",
+            "Improve error handling",
+            "Conduct regression testing",
+            "Document fixes and workarounds"
+          ],
+          "dependencies": ["4.1", "4.2"]
+        },
+        {
+          "task_id": "4.4",
+          "name": "User Acceptance Testing",
+          "description": "Conduct UAT with stakeholders",
+          "assignee_role": "Product Manager",
+          "status": "Not Started",
+          "estimated_hours": 8,
+          "deliverables": [
+            "UAT plan",
+            "UAT results",
+            "Stakeholder sign-off"
+          ],
+          "detailed_steps": [
+            "Create UAT test cases",
+            "Schedule UAT sessions",
+            "Guide stakeholders through testing",
+            "Collect feedback",
+            "Document required changes",
+            "Obtain sign-off for launch"
+          ],
+          "dependencies": ["4.3"]
+        }
+      ]
+    },
+    {
+      "phase_id": 5,
+      "name": "MVP Launch",
+      "status": "Not Started",
+      "description": "Launch the MVP and provide documentation",
+      "estimated_duration": "3-5 days",
+      "tasks": [
+        {
+          "task_id": "5.1",
+          "name": "User Documentation",
+          "description": "Create user documentation",
+          "assignee_role": "Product Manager",
+          "status": "Not Started",
+          "estimated_hours": 12,
+          "deliverables": [
+            "User guide",
+            "FAQ document",
+            "Tutorial videos"
+          ],
+          "detailed_steps": [
+            "Create step-by-step user guides",
+            "Document data requirements",
+            "Create result interpretation guide",
+            "Create frequently asked questions",
+            "Produce tutorial videos",
+            "Add help text within the application"
+          ],
+          "dependencies": ["4.4"]
+        },
+        {
+          "task_id": "5.2",
+          "name": "Final Deployment",
+          "description": "Finalize deployment configurations",
+          "assignee_role": "Developer",
+          "status": "Not Started",
+          "estimated_hours": 4,
+          "deliverables": [
+            "Production deployment",
+            "Deployment documentation"
+          ],
+          "detailed_steps": [
+            "Review API deployment settings",
+            "Optimize performance configurations",
+            "Set up monitoring",
+            "Create backup procedures",
+            "Document deployment architecture"
+          ],
+          "dependencies": ["4.4"]
+        },
+        {
+          "task_id": "5.3",
+          "name": "Launch Preparation",
+          "description": "Prepare for launch",
+          "assignee_role": "Product Manager",
+          "status": "Not Started",
+          "estimated_hours": 4,
+          "deliverables": [
+            "Launch checklist",
+            "Communication plan"
+          ],
+          "detailed_steps": [
+            "Create launch checklist",
+            "Prepare communication materials",
+            "Set up support channels",
+            "Create monitoring dashboard",
+            "Define success metrics"
+          ],
+          "dependencies": ["5.1", "5.2"]
+        },
+        {
+          "task_id": "5.4",
+          "name": "MVP Launch",
+          "description": "Launch the MVP to users",
+          "assignee_role": "Product Manager",
+          "status": "Not Started",
+          "estimated_hours": 2,
+          "deliverables": [
+            "Launched application",
+            "Launch announcement"
+          ],
+          "detailed_steps": [
+            "Verify all systems operational",
+            "Send launch communications",
+            "Monitor initial usage",
+            "Address any immediate issues",
+            "Collect initial feedback"
+          ],
+          "dependencies": ["5.3"]
+        },
+        {
+          "task_id": "5.5",
+          "name": "Post-Launch Review",
+          "description": "Review launch success and plan next steps",
+          "assignee_role": "Product Manager",
+          "status": "Not Started",
+          "estimated_hours": 4,
+          "deliverables": [
+            "Launch review document",
+            "Future roadmap"
+          ],
+          "detailed_steps": [
+            "Collect usage metrics",
+            "Gather user feedback",
+            "Identify key improvements",
+            "Create roadmap for future enhancements",
+            "Document technical debt items",
+            "Plan next development sprint"
+          ],
+          "dependencies": ["5.4"]
+        }
+      ]
+    }
+  ],
+  "resources": {
+    "roles": [
+      {
+        "role": "Developer",
+        "responsibilities": [
+          "API development",
+          "Model integration",
+          "Bubble UI development",
+          "Deployment configuration"
+        ]
+      },
+      {
+        "role": "QA",
+        "responsibilities": [
+          "Test planning",
+          "Test execution",
+          "Bug reporting",
+          "Performance testing"
+        ]
+      },
+      {
+        "role": "Product Manager",
+        "responsibilities": [
+          "Requirements definition",
+          "User documentation",
+          "Stakeholder management",
+          "Launch coordination"
+        ]
+      }
+    ],
+    "tools": [
+      {
+        "name": "GitHub",
+        "purpose": "Code repository and version control"
+      },
+      {
+        "name": "Flask",
+        "purpose": "API development framework"
+      },
+      {
+        "name": "Bubble.io",
+        "purpose": "No-code frontend development"
+      },
+      {
+        "name": "Render.com",
+        "purpose": "API hosting and deployment"
+      },
+      {
+        "name": "Postman",
+        "purpose": "API testing"
+      }
+    ]
+  },
+  "risks": [
+    {
+      "risk_id": "R1",
+      "description": "API performance issues with large datasets",
+      "impact": "High",
+      "probability": "Medium",
+      "mitigation": "Implement file size limits, add progress indicators, optimize model code"
+    },
+    {
+      "risk_id": "R2",
+      "description": "Integration challenges between Bubble and API",
+      "impact": "High",
+      "probability": "Medium",
+      "mitigation": "Thorough API documentation, extensive testing, simplify data contracts"
+    },
+    {
+      "risk_id": "R3",
+      "description": "User adoption barriers due to complex UI",
+      "impact": "Medium",
+      "probability": "Medium",
+      "mitigation": "Focus on intuitive design, provide comprehensive documentation, create tutorial videos"
+    },
+    {
+      "risk_id": "R4",
+      "description": "Technical limitations of Bubble for advanced visualizations",
+      "impact": "Medium",
+      "probability": "Medium",
+      "mitigation": "Use plugin solutions where necessary, simplify visualization requirements for MVP"
+    }
+  ],
+  "success_criteria": [
+    {
+      "criterion": "Users can successfully upload marketing data",
+      "measurement": "90% of uploads complete without errors"
+    },
+    {
+      "criterion": "Model generates meaningful marketing mix insights",
+      "measurement": "Model produces statistically significant results with R² > 0.7"
+    },
+    {
+      "criterion": "Results can be visualized effectively",
+      "measurement": "All key metrics and elasticities display correctly in dashboard"
+    },
+    {
+      "criterion": "System handles expected data volumes",
+      "measurement": "Processing time < 30 seconds for typical datasets"
+    }
+  ],
+  "project_constraints": [
+    {
+      "constraint": "Must use basic_mmm.py as the core model implementation",
+      "impact": "Limits ability to implement additional model features for MVP"
+    },
+    {
+      "constraint": "Bubble.io for frontend development",
+      "impact": "May limit some visualization capabilities"
+    },
+    {
+      "constraint": "MVP delivery timeline (6-7 weeks)",
+      "impact": "Requires focusing on core functionality over extensive features"
+    }
+  ],
+  "next_steps": [
+    {
+      "step": "Begin API development",
+      "description": "Start with API design and model wrapper creation",
+      "priority": "High"
+    },
+    {
+      "step": "Set up GitHub repository",
+      "description": "Create repo structure and make initial code commit",
+      "priority": "High"
+    },
+    {
+      "step": "Create Bubble.io account",
+      "description": "Set up initial application and explore UI capabilities",
+      "priority": "Medium"
+    },
+    {
+      "step": "Define detailed API contract",
+      "description": "Document exact input/output specifications for integration",
+      "priority": "High"
+    }
+  ],
+  "current_milestone": "Project Initialization",
+  "next_milestone": "API Development Complete"
+}
+
+{
   "project_name": "Marketing Mix Model (MMM) Development",
   "timeline": "8–10 weeks",
   "current_status": {
