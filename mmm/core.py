@@ -55,7 +55,9 @@ class MarketingMixModel:
         self.X = None
         self.y = None
         self.feature_names = None
+        # Add support for multiple targets
         self.target = None
+        self.units_target = None
         self.adstock_transformations = {}
         self.cv_results = {}
         self.elasticities = {}
@@ -81,8 +83,19 @@ class MarketingMixModel:
 
             # Load data
             self.data = pd.read_csv(self.data_path)
+
+            # Update date column parsing
+            if 'Date' in self.data.columns:
+                self.data['Date'] = pd.to_datetime(self.data['Date'], format='%m/%d/%Y')
+
+            # Flexible target column detection
+            self.target = 'Sales' if 'Sales' in self.data.columns else 'Revenue'
+            self.units_target = 'Units Sold'
+
             logger.info(f"Successfully loaded data from {self.data_path}")
             logger.info(f"Data shape: {self.data.shape}")
+            logger.info(f"Target column: {self.target}")
+            logger.info(f"Units column: {self.units_target}")
 
             # Display basic info about the data
             logger.info(f"Columns: {self.data.columns.tolist()}")
@@ -102,8 +115,8 @@ class MarketingMixModel:
         return self.data
 
     def preprocess_data(self,
-                        target='sales',
-                        date_col='date',
+                        target=None,
+                        date_col='Date',
                         media_cols=None,
                         control_cols=None):
         """Preprocess data for modeling."""
@@ -119,11 +132,13 @@ class MarketingMixModel:
 
             # Handle date column
             if date_col in df.columns:
-                df[date_col] = pd.to_datetime(df[date_col])
+                df[date_col] = pd.to_datetime(df[date_col], format='%m/%d/%Y')
                 df = df.sort_values(by=date_col)
                 logger.info(f"Date range: {df[date_col].min()} to {df[date_col].max()}")
 
-            # Set target variable
+            # Set target variable with flexible detection
+            if target is None:
+                target = 'Sales' if 'Sales' in df.columns else 'Revenue'
             self.target = target
 
             # Identify media channels if not provided
@@ -159,6 +174,10 @@ class MarketingMixModel:
             # Set up X and y for modeling
             self.X = df[self.feature_names]
             self.y = df[target]
+
+            # Add support for Units Sold
+            if 'Units Sold' in df.columns:
+                self.units_target = 'Units Sold'
 
             logger.info("Data preprocessing completed successfully")
             return df

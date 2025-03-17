@@ -112,29 +112,33 @@ def evaluate_model_performance(y_true, y_pred, model_name):
         "mape": mape
     }
 
-
-def plot_actual_vs_predicted(actual, predicted_baseline, predicted_log_log,
+def plot_actual_vs_predicted(actual_sales, actual_units,
+                             pred_baseline_sales, pred_baseline_units,
+                             pred_loglog_sales, pred_loglog_units,
                              dates=None, title="Model Comparison"):
-    """Plot actual vs predicted values for different models."""
-    plt.figure(figsize=(12, 6))
+    # Create subplots for Sales and Units
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10))
 
-    if dates is not None:
-        x_values = dates
-    else:
-        x_values = range(len(actual))
+    # Sales subplot
+    ax1.plot(dates, actual_sales, 'b-', label='Actual Sales', linewidth=2)
+    ax1.plot(dates, pred_baseline_sales, 'r-', label='Baseline Sales', alpha=0.7)
+    ax1.plot(dates, pred_loglog_sales, 'g-', label='Log-Log Sales', alpha=0.7)
+    ax1.set_title('Sales Comparison')
+    ax1.set_ylabel('Sales')
+    ax1.legend()
+    ax1.grid(True, alpha=0.3)
 
-    plt.plot(x_values, actual, 'b-', label='Actual', linewidth=2)
-    plt.plot(x_values, predicted_baseline, 'r-', label='Baseline Model', alpha=0.7)
-    plt.plot(x_values, predicted_log_log, 'g-', label='Log-Log Model', alpha=0.7)
+    # Units subplot
+    ax2.plot(dates, actual_units, 'b-', label='Actual Units', linewidth=2)
+    ax2.plot(dates, pred_baseline_units, 'r-', label='Baseline Units', alpha=0.7)
+    ax2.plot(dates, pred_loglog_units, 'g-', label='Log-Log Units', alpha=0.7)
+    ax2.set_title('Units Sold Comparison')
+    ax2.set_xlabel('Date')
+    ax2.set_ylabel('Units')
+    ax2.legend()
+    ax2.grid(True, alpha=0.3)
 
-    plt.title(title)
-    plt.xlabel('Time Period')
-    plt.ylabel('Sales')
-    plt.legend()
-    plt.grid(True, alpha=0.3)
     plt.tight_layout()
-
-    # Save plot
     plt.savefig('model_comparison.png')
     plt.show()
 
@@ -223,6 +227,22 @@ def plot_response_curves(model, X, model_type, feature_cols,
 
 
 def run_log_log_model(data_path):
+    # Load data
+    print(f"Loading data from {data_path}...")
+    df = pd.read_csv(data_path)
+
+    # Diagnostic print statements
+    print("\n--- Data Diagnostic Information ---")
+    print(f"Total rows: {len(df)}")
+    print(f"Columns: {df.columns.tolist()}")
+    print("\nColumn Data Types:")
+    print(df.dtypes)
+
+    print("\nFirst few rows:")
+    print(df.head())
+
+    print("\nBasic statistical summary:")
+    print(df.describe())
     """
     Run the MMM analysis using a log-log model.
 
@@ -236,12 +256,25 @@ def run_log_log_model(data_path):
     print(f"Loading data from {data_path}...")
     df = pd.read_csv(data_path)
 
+    # Convert Date column to datetime if it exists
+    if 'Date' in df.columns:
+        df['Date'] = pd.to_datetime(df['Date'])
+        # Sort by date to ensure chronological order
+        df = df.sort_values('Date').reset_index(drop=True)
+
+    # Identify target column (support both 'Sales' and 'Revenue')
+    target_sales_col = 'Sales' if 'Sales' in df.columns else 'Revenue'
+    target_units_col = 'Units Sold'
+
+    # Validate both target columns exist
+    if target_sales_col not in df.columns or target_units_col not in df.columns:
+        raise ValueError(f"Missing required columns. Need '{target_sales_col}' and '{target_units_col}'.")
+
     # Identify media channels
     feature_cols = [col for col in df.columns if '_Spend' in col]
-    target_col = 'Sales'
 
     print(f"Media channels: {feature_cols}")
-    print(f"Target variable: {target_col}")
+    print(f"Target variable: {target_sales_col}")
 
     # Split data into train and test sets (80/20 split)
     train_size = int(len(df) * 0.8)
@@ -256,10 +289,10 @@ def run_log_log_model(data_path):
 
     # Apply transformations
     transformed_train_df, log_target_col, log_feature_cols = apply_log_transformations(
-        train_df, target_col, feature_cols)
+        train_df, target_sales_col, feature_cols)
 
     transformed_test_df, _, _ = apply_log_transformations(
-        test_df, target_col, feature_cols)
+        test_df, target_sales_col, feature_cols)
 
     # ------------------------------------------------------------------------
     # Baseline Model (Linear-Linear)
@@ -268,7 +301,7 @@ def run_log_log_model(data_path):
 
     # Prepare X and y for baseline model
     X_train_base = sm.add_constant(train_df[feature_cols])
-    y_train_base = train_df[target_col]
+    y_train_base = train_df[target_sales_col]
 
     # Fit baseline model
     baseline_model = sm.OLS(y_train_base, X_train_base).fit()
@@ -276,7 +309,7 @@ def run_log_log_model(data_path):
 
     # Make predictions on test set
     X_test_base = sm.add_constant(test_df[feature_cols])
-    y_test_base = test_df[target_col]
+    y_test_base = test_df[target_sales_col]
     baseline_predictions = baseline_model.predict(X_test_base)
 
     # Evaluate baseline model
@@ -310,7 +343,7 @@ def run_log_log_model(data_path):
 
     # Evaluate log-log model (comparing in original scale)
     log_log_metrics = evaluate_model_performance(
-        test_df[target_col], log_log_predictions, "Log-Log Model")
+        test_df[target_sales_col], log_log_predictions, "Log-Log Model")
 
     # Calculate log-log elasticities
     log_log_elasticities = calculate_elasticities(
@@ -339,11 +372,14 @@ def run_log_log_model(data_path):
 
     # Plot actual vs predicted for both models
     plot_actual_vs_predicted(
-        test_df[target_col],
-        baseline_predictions,
-        log_log_predictions,
-        dates=test_df.index if 'date' in test_df.columns else None,
-        title="Actual vs. Predicted Sales (Test Set)"
+        test_df[target_sales_col],  # actual_sales
+        test_df[target_units_col],  # actual_units
+        baseline_predictions,  # pred_baseline_sales
+        baseline_predictions,  # pred_baseline_units
+        log_log_predictions,  # pred_loglog_sales
+        log_log_predictions,  # pred_loglog_units
+        dates=test_df['Date'] if 'Date' in test_df.columns else None,
+        title="Actual vs. Predicted Sales and Units (Test Set)"
     )
 
     # Plot response curves for log-log model
@@ -357,18 +393,25 @@ def run_log_log_model(data_path):
         current_values
     )
 
+    # In the result dictionary, include both projections
     return {
         'baseline': {
             'model': baseline_model,
             'metrics': baseline_metrics,
             'elasticities': baseline_elasticities,
-            'predictions': baseline_predictions
+            'predictions': {
+                'sales': baseline_predictions,
+                'units': baseline_predictions  # You might want a separate prediction logic
+            }
         },
         'log_log': {
             'model': log_log_model,
             'metrics': log_log_metrics,
             'elasticities': log_log_elasticities,
-            'predictions': log_log_predictions
+            'predictions': {
+                'sales': log_log_predictions,
+                'units': log_log_predictions  # Again, potentially more sophisticated later
+            }
         }
     }
 

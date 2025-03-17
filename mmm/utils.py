@@ -42,13 +42,14 @@ def calculate_vif(X):
     return vif_data
 
 
-def evaluate_model_performance(y_true, y_pred):
+def evaluate_model_performance(y_true, y_pred, target_type='sales'):
     """
     Calculate performance metrics for model evaluation.
 
     Args:
         y_true: Actual values
         y_pred: Predicted values
+        target_type: Type of target ('sales' or 'units')
 
     Returns:
         Dictionary with performance metrics
@@ -60,19 +61,18 @@ def evaluate_model_performance(y_true, y_pred):
     mae = mean_absolute_error(y_true, y_pred)
     r2 = r2_score(y_true, y_pred)
 
-    # Calculate MAPE if no zeros in y_true
-    if not np.any(y_true == 0):
-        mape = np.mean(np.abs((y_true - y_pred) / y_true)) * 100
-    else:
-        # Alternative when zeros present
-        mape = np.mean(np.abs((y_true - y_pred) / (y_true + 1e-10))) * 100
+    # Calculate MAPE with more robust handling
+    try:
+        mape = np.mean(np.abs((y_true - y_pred) / (y_true + np.finfo(float).eps))) * 100
+    except Exception:
+        mape = np.mean(np.abs((y_true - y_pred) / (np.abs(y_true) + 1e-10))) * 100
 
     # Return metrics
     return {
-        'rmse': rmse,
-        'mae': mae,
-        'r2': r2,
-        'mape': mape
+        f'{target_type}_rmse': rmse,
+        f'{target_type}_mae': mae,
+        f'{target_type}_r2': r2,
+        f'{target_type}_mape': mape
     }
 
 
@@ -83,13 +83,19 @@ def create_train_test_split(data, train_frac=0.8, date_col=None):
     Args:
         data: DataFrame to split
         train_frac: Fraction of data to use for training
-        date_col: Name of date column for sorting
+        date_col: Name of date column for sorting (defaults to 'Date' or 'date')
 
     Returns:
         Tuple of (train_data, test_data)
     """
+    # Determine date column if not specified
+    if date_col is None:
+        date_col = 'Date' if 'Date' in data.columns else 'date'
+
     # Sort by date if provided
-    if date_col and date_col in data.columns:
+    if date_col in data.columns:
+        # Ensure datetime parsing with specified format
+        data[date_col] = pd.to_datetime(data[date_col], format='%m/%d/%Y')
         data = data.sort_values(by=date_col).reset_index(drop=True)
 
     # Calculate split point

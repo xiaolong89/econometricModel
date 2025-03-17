@@ -24,7 +24,7 @@ def detect_media_columns(df):
         List of detected media column names
     """
     potential_media_keywords = [
-        'spend', 'tv', 'radio', 'digital', 'social',
+        'spend', 'marketing spend', 'units sold', 'units', 'tv', 'radio', 'digital', 'social',
         'search', 'display', 'video', 'email', 'print',
         'outdoor', 'media', 'facebook', 'google', 'twitter',
         'tiktok', 'youtube', 'programmatic', 'ad_'
@@ -33,7 +33,9 @@ def detect_media_columns(df):
     media_cols = []
     for col in df.columns:
         if any(keyword in col.lower() for keyword in potential_media_keywords):
-            media_cols.append(col)
+            # Exclude Date and known non-media columns
+            if col not in ['Date', 'Sales', 'Revenue', 'Units Sold']:
+                media_cols.append(col)
 
     return media_cols
 
@@ -150,13 +152,13 @@ def make_stationary(df, target_col, transformation_type='log'):
         return transformed_df, f"{target_col}_diff", transformation_info
 
 
-def add_seasonality_features(df, date_col):
+def add_seasonality_features(df, date_col=None):
     """
     Add seasonality features to the dataset.
 
     Args:
         df: DataFrame to modify
-        date_col: Name of the date column
+        date_col: Name of the date column (defaults to 'Date' or 'date')
 
     Returns:
         DataFrame with added seasonality features
@@ -164,9 +166,13 @@ def add_seasonality_features(df, date_col):
     # Create a copy to avoid modifying the original
     result_df = df.copy()
 
+    # Determine date column if not specified
+    if date_col is None:
+        date_col = 'Date' if 'Date' in df.columns else 'date'
+
     # Convert date column to datetime if it's not already
     if pd.api.types.is_string_dtype(result_df[date_col]):
-        result_df[date_col] = pd.to_datetime(result_df[date_col])
+        result_df[date_col] = pd.to_datetime(result_df[date_col], format='%m/%d/%Y')
 
     # Extract datetime components
     result_df['month'] = result_df[date_col].dt.month
@@ -306,15 +312,15 @@ def check_multicollinearity(df, feature_cols, vif_threshold=10):
     return vif_data
 
 
-def preprocess_for_modeling(df, target, date_col=None, media_cols=None, control_cols=None,
+def preprocess_for_modeling(df, target=None, date_col=None, media_cols=None, control_cols=None,
                             make_stationary_flag=True, orthogonalize=True, add_seasonality=True):
     """
     Complete preprocessing pipeline for modeling.
 
     Args:
         df: DataFrame to process
-        target: Name of the target variable
-        date_col: Name of the date column (optional)
+        target: Name of the target variable (defaults to 'Sales' or 'Revenue')
+        date_col: Name of the date column (optional, defaults to 'Date' or 'date')
         media_cols: List of media column names (optional)
         control_cols: List of control column names (optional)
         make_stationary_flag: Whether to transform target for stationarity
@@ -327,10 +333,18 @@ def preprocess_for_modeling(df, target, date_col=None, media_cols=None, control_
     # Make a copy to avoid modifying the original
     processed_df = df.copy()
 
+    # Determine date column if not specified
+    if date_col is None:
+        date_col = 'Date' if 'Date' in processed_df.columns else 'date'
+
     # Handle date column
-    if date_col and date_col in processed_df.columns:
-        processed_df[date_col] = pd.to_datetime(processed_df[date_col])
+    if date_col in processed_df.columns:
+        processed_df[date_col] = pd.to_datetime(processed_df[date_col], format='%m/%d/%Y')
         processed_df = processed_df.sort_values(by=date_col)
+
+    # Determine target column if not specified
+    if target is None:
+        target = 'Sales' if 'Sales' in processed_df.columns else 'Revenue'
 
     # Auto-detect columns if not provided
     if media_cols is None:
@@ -504,14 +518,21 @@ def preprocess_data(df):
     # Create a copy to avoid modifying the original
     data = df.copy()
 
-    # Convert date to datetime if needed
-    if 'date' in data.columns and data['date'].dtype == 'object':
-        data['date'] = pd.to_datetime(data['date'])
-        data.set_index('date', inplace=True)
+    # Convert date to datetime if needed (updated to handle both 'date' and 'Date')
+    date_column = 'Date' if 'Date' in data.columns else 'date'
+    if date_column in data.columns and data[date_column].dtype == 'object':
+        data[date_column] = pd.to_datetime(data[date_column], format='%m/%d/%Y')
+        data.set_index(date_column, inplace=True)
 
-    # Log transform revenue (for stationarity & to handle skewness)
+    # Log transform revenue or sales (for stationarity & to handle skewness)
     if 'revenue' in data.columns:
         data['log_revenue'] = np.log(data['revenue'])
+    elif 'Sales' in data.columns:
+        data['log_sales'] = np.log(data['Sales'])
+
+    # Log transform units sold if present
+    if 'Units Sold' in data.columns:
+        data['log_units'] = np.log(data['Units Sold'])
 
     # Simple adstock transformations for media channels
     media_channels = ['tv_spend', 'search_spend', 'social_spend', 'display_spend', 'email_spend']
@@ -536,7 +557,8 @@ def preprocess_data(df):
     data['owned_media'] = data.get('email_spend_adstock', 0)
 
     # Add any seasonal indicators if needed
-    if 'date' in data.index.names:
+    date_column = 'Date' if 'Date' in data.index.names else 'date'
+    if date_column in data.index.names:
         data['month'] = data.index.month
         # Convert to dummy variables
         month_dummies = pd.get_dummies(data['month'], prefix='month', drop_first=True)
@@ -573,7 +595,7 @@ if __name__ == "__main__":
         import matplotlib.pyplot as plt
 
         # Load example data
-        df = pd.read_csv('data/synthetic_advertising_data_v2.csv')
+        df = pd.read_csv('C:\_econometricModel\data\mmm_data.csv')
 
         # Apply preprocessing
         processed_data = preprocess_data(df)
