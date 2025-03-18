@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 # Import internal modules
 from mmm.preprocessing import detect_media_columns, detect_control_columns, check_stationarity
 from mmm.adstock import apply_adstock
-from mmm.utils import calculate_vif
+from mmm.utils import calculate_vif, parse_date_column  # Import parse_date_column
 
 class MarketingMixModel:
     """
