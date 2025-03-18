@@ -10,6 +10,8 @@ from sklearn.preprocessing import StandardScaler
 import statsmodels.api as sm
 import matplotlib.pyplot as plt
 
+from mmm.utils import parse_date_column
+
 logger = logging.getLogger(__name__)
 
 
@@ -517,6 +519,11 @@ def preprocess_data(df):
     """
     # Create a copy to avoid modifying the original
     data = df.copy()
+
+    # Use consistent date parsing
+    if 'Date' in data.columns:
+        data = parse_date_column(data)
+        data.set_index('Date', inplace=True)
 
     # Convert date to datetime if needed (updated to handle both 'date' and 'Date')
     date_column = 'Date' if 'Date' in data.columns else 'date'

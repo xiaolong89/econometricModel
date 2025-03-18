@@ -108,3 +108,28 @@ def create_train_test_split(data, train_frac=0.8, date_col=None):
     logger.info(f"Created train/test split: {len(train_data)} training samples, {len(test_data)} test samples")
 
     return train_data, test_data
+
+
+# Consistent Date Parsing Function
+def parse_date_column(df, date_column='Date'):
+    """
+    Consistently parse date columns across the project.
+
+    Args:
+        df: DataFrame containing the date column
+        date_column: Name of the date column (default: 'Date')
+
+    Returns:
+        DataFrame with parsed date column
+    """
+    try:
+        # Attempt parsing with specific format
+        df[date_column] = pd.to_datetime(df[date_column], format='%m/%d/%Y')
+    except ValueError:
+        # Fallback to more flexible parsing if specific format fails
+        df[date_column] = pd.to_datetime(df[date_column])
+
+    # Ensure chronological sorting
+    df = df.sort_values(by=date_column).reset_index(drop=True)
+
+    return df

@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 import statsmodels.api as sm
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_percentage_error
 
+from mmm.utils import parse_date_column
+
 
 def apply_log_transformations(df, target_col, feature_cols):
     """
@@ -230,6 +232,9 @@ def run_log_log_model(data_path):
     # Load data
     print(f"Loading data from {data_path}...")
     df = pd.read_csv(data_path)
+
+    # Use consistent date parsing
+    df = parse_date_column(df)
 
     # Diagnostic print statements
     print("\n--- Data Diagnostic Information ---")

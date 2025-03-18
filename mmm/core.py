@@ -84,9 +84,13 @@ class MarketingMixModel:
             # Load data
             self.data = pd.read_csv(self.data_path)
 
-            # Update date column parsing
+            # Use consistent date parsing
             if 'Date' in self.data.columns:
-                self.data['Date'] = pd.to_datetime(self.data['Date'], format='%m/%d/%Y')
+                self.data = parse_date_column(self.data)
+
+            # Update date column parsing - commented out 17-MAR
+            # if 'Date' in self.data.columns:
+            #    self.data['Date'] = pd.to_datetime(self.data['Date'], format='%m/%d/%Y')
 
             # Flexible target column detection
             self.target = 'Sales' if 'Sales' in self.data.columns else 'Revenue'
